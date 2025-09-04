@@ -264,7 +264,7 @@ const LandingPage = () => {
               >
                 Pricing
               </button>
-              <Link href="/general-dashboard" className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 shadow-md hover:shadow-lg">
+              <Link href="/auth" className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 shadow-md hover:shadow-lg">
                 Get Started
               </Link>
               <button 
@@ -714,7 +714,7 @@ const LandingPage = () => {
               Join thousands of teams already using Visual Brainstorm Canvas to collaborate more effectively.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/general-dashboard" className="px-8 py-4 bg-white text-blue-600 rounded-xl hover:bg-gray-100 font-bold transition-all duration-300 shadow-lg hover:shadow-xl">
+              <Link href="/auth" className="px-8 py-4 bg-white text-blue-600 rounded-xl hover:bg-gray-100 font-bold transition-all duration-300 shadow-lg hover:shadow-xl">
                 Start Free Trial
               </Link>
               <button className="px-8 py-4 bg-transparent text-white border-2 border-white rounded-xl hover:bg-white/10 font-bold transition-all duration-300">
