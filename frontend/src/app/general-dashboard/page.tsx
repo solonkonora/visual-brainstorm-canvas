@@ -1,12 +1,14 @@
 "use client";
 
-
-import { useState } from "react";
-import { Home, Compass, Star, Bell, Gift, UserPlus, Menu } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Home, Compass, Star, Bell, Gift, UserPlus, Menu, LogOut } from "lucide-react";
 import Link from 'next/link';
 
 export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+  const [loading, setLoading] = useState(true);
+  
   const templates = [
     { name: "Blank board", color: "from-blue-500 to-blue-700" },
     { name: "Flowchart", color: "from-purple-500 to-purple-700" },
@@ -23,6 +25,83 @@ export default function Dashboard() {
     { name: "My First Board", modified: "Today", owner: "Davy Kennang" },
     { name: "Untitled", modified: "Today", owner: "Davy Kennang" },
   ];
+
+  // Fetch current user information
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          setLoading(false);
+          return;
+        }
+
+        const response = await fetch('http://localhost:3005/users/current_user', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const userData = await response.json();
+          setUser(userData);
+        }
+      } catch (error) {
+        console.error('Error fetching current user:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCurrentUser();
+  }, []);
+
+  const handleInviteMembers = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('You must be logged in to invite members');
+        return;
+      }
+
+      const response = await fetch('http://localhost:3005/api/canvases', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        await navigator.clipboard.writeText(data.shareableLink);
+        alert(`Invite link copied to clipboard: ${data.shareableLink}`);
+      } else {
+        alert('Failed to generate invite link');
+      }
+    } catch (error) {
+      console.error('Error generating invite link:', error);
+      alert('Error generating invite link');
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        await fetch('http://localhost:3006/users/logout', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+      }
+      localStorage.removeItem('token');
+      window.location.href = "/auth"; // Redirect to login page
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+  };
 
   return (
     <div className="flex h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
@@ -67,10 +146,17 @@ export default function Dashboard() {
           </a>
         </nav>
 
-        <div className="p-4">
-          <Link href="/dashboard" className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl px-3 py-2 text-sm font-medium shadow hover:from-blue-700 hover:to-blue-800 transition block text-center">
+        <div className="p-4 space-y-2">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white rounded-xl px-3 py-2 text-sm font-medium shadow transition"
+          >
+            <LogOut size={16} /> Logout
+          </button>
+
+          {/* <Link href="/dashboard" className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl px-3 py-2 text-sm font-medium shadow hover:from-blue-700 hover:to-blue-800 transition block text-center">
             + New Space
-          </Link>
+          </Link> */}
         </div>
       </aside>
 
@@ -91,7 +177,10 @@ export default function Dashboard() {
             <span className="text-xs bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-lg">Free</span>
           </div>
           <div className="flex items-center gap-3">
-            <button className="flex items-center gap-1 text-sm font-medium px-3 py-1 border rounded-lg hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-800 dark:text-gray-200">
+            <button 
+              className="flex items-center gap-1 text-sm font-medium px-3 py-1 border rounded-lg hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-800 dark:text-gray-200"
+              onClick={handleInviteMembers}
+            >
               <UserPlus size={16} /> Invite members
             </button>
             <button className="bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm px-3 py-1 rounded-lg hover:from-blue-700 hover:to-blue-800 shadow">
@@ -99,7 +188,21 @@ export default function Dashboard() {
             </button>
             <Gift size={20} className="text-gray-600 dark:text-gray-300" />
             <Bell size={20} className="text-gray-600 dark:text-gray-300" />
-            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-700"></div>
+            {loading ? (
+              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-700 animate-pulse"></div>
+            ) : user ? (
+              <div className="flex items-center gap-2">
+                <div className="text-right hidden sm:block">
+                  <div className="text-sm font-medium text-gray-800 dark:text-gray-200">{user.name}</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">{user.email}</div>
+                </div>
+                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-700 flex items-center justify-center text-white text-sm font-medium">
+                  {user.name.charAt(0).toUpperCase()}
+                </div>
+              </div>
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-700"></div>
+            )}
           </div>
         </header>
 

@@ -19,7 +19,6 @@ const AuthPage = () => {
     setError(null);
 
     try {
-
       const url = isLogin
         ? `${BACKEND_URL}/users/login`
         : `${BACKEND_URL}/users/signup`;
@@ -39,11 +38,12 @@ const AuthPage = () => {
         throw new Error(errorData.message || 'Authentication failed');
       }
 
-
-      await fetch(`${BACKEND_URL}/users/current_user`, {
-        method: 'GET',
-        credentials: 'include',
-      });
+      const data = await response.json();
+      
+      // Store the token in localStorage
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+      }
 
       router.push('/general-dashboard');
     } catch (err) {
@@ -65,7 +65,7 @@ const AuthPage = () => {
             </div>
           </Link>
           <h2 className="mt-6 text-center text-3xl font-bold text-gray-800 dark:text-white">
-            {isLogin ? 'Sign in to your account' : 'Create a new account'}
+            {isLogin ? 'Login to your account' : 'Create a new account'}
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
             {isLogin
@@ -164,7 +164,7 @@ const AuthPage = () => {
                 type="submit"
                 className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
               >
-                {isLogin ? 'Sign in' : 'Sign up'}
+                {isLogin ? 'Login' : 'Sign up'}
               </button>
             </div>
           </form>
@@ -174,7 +174,7 @@ const AuthPage = () => {
             <button
               type="button"
               onClick={() => setIsLogin(!isLogin)}
-              className="text-sm font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+              className="text-sm font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 rounded-lg"
             >
               {isLogin
                 ? "Don't have an account? Sign up"

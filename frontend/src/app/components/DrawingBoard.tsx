@@ -14,6 +14,7 @@ import {
 } from 'react-icons/fa';
 import Konva from 'konva';
 import { useTheme } from '../context/theme-context';
+
 import { useCanvasStore, type ShapeType } from '@/stores/canvasStore';
 
 const DrawingBoard: React.FC = () => {
@@ -50,12 +51,14 @@ const DrawingBoard: React.FC = () => {
   } = useCanvasStore();
   
   const [selectionRect, setSelectionRect] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+
   const [connectTemp, setConnectTemp] = useState<string | null>(null);
   const [roomId] = useState('demo-room-1');
   const [canvasSize, setCanvasSize] = useState({ width: 1200, height: 800 });
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   const [saveMessage, setSaveMessage] = useState<string>('');
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+
   const stageRef = useRef<Konva.Stage | null>(null);
   const trRef = useRef<Konva.Transformer | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -63,6 +66,7 @@ const DrawingBoard: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
 
   // Initialize Socket.IO connections and load canvas
+
   useEffect(() => {
     const userId = 'user-' + Date.now();
     initializeSocket(roomId, userId);
@@ -380,6 +384,7 @@ const DrawingBoard: React.FC = () => {
 
   const onDragEnd = (id: string, e: any) => {
     const node = e.target;
+
     const shape = shapes.find(s => s.id === id);
     if (shape) {
       const updatedShapes = shapes.map(s => 
@@ -388,10 +393,12 @@ const DrawingBoard: React.FC = () => {
           : s
       );
       updateShapes(updatedShapes);
+
     }
   };
 
   return (
+
     <div className="h-screen flex bg-white dark:bg-gray-900">
       {/* Left Toolbar */}
       <div className="w-16 bg-slate-100 dark:bg-slate-800 flex flex-col items-center py-4 space-y-2">
@@ -438,6 +445,7 @@ const DrawingBoard: React.FC = () => {
             onChange={(e) => setBrushColor(e.target.value)} 
             className="w-10 h-10 rounded-lg mt-1 cursor-pointer" 
           />
+
         </div>
       </div>
 
@@ -522,6 +530,7 @@ const DrawingBoard: React.FC = () => {
               <span className={`px-2 py-1 rounded text-sm bg-gray-100 text-gray-700`}>
                 Last saved: {lastSaved.toLocaleTimeString()}
               </span>
+
             )}
             <button onClick={toggleTheme} className="p-2 bg-slate-200 dark:bg-slate-700 rounded-lg">
               {theme === 'dark' ? <FaSun /> : <FaMoon />}
@@ -547,6 +556,7 @@ const DrawingBoard: React.FC = () => {
               {shapes.map((shape) => {
                 if (shape.type === 'line') {
                   return (
+
                     <Line
                       key={shape.id}
                       id={shape.id}
@@ -592,6 +602,7 @@ const DrawingBoard: React.FC = () => {
                       draggable={shape.draggable}
                       onDragEnd={(e) => onDragEnd(shape.id, e)}
                     />
+
                   );
                 }
                 
