@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Home, Compass, Star, Bell, Gift, UserPlus, Menu } from "lucide-react";
+import { Home, Compass, Star, Bell, Gift, UserPlus, Menu, LogOut } from "lucide-react";
 import Link from 'next/link';
 
 export default function Dashboard() {
@@ -74,7 +74,6 @@ export default function Dashboard() {
 
       if (response.ok) {
         const data = await response.json();
-        // Copy the shareable link to clipboard
         await navigator.clipboard.writeText(data.shareableLink);
         alert(`Invite link copied to clipboard: ${data.shareableLink}`);
       } else {
@@ -83,6 +82,24 @@ export default function Dashboard() {
     } catch (error) {
       console.error('Error generating invite link:', error);
       alert('Error generating invite link');
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        await fetch('http://localhost:3006/users/logout', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+      }
+      localStorage.removeItem('token');
+      window.location.href = "/auth"; // Redirect to login page
+    } catch (error) {
+      console.error('Error logging out:', error);
     }
   };
 
@@ -129,10 +146,17 @@ export default function Dashboard() {
           </a>
         </nav>
 
-        <div className="p-4">
-          <Link href="/dashboard" className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl px-3 py-2 text-sm font-medium shadow hover:from-blue-700 hover:to-blue-800 transition block text-center">
+        <div className="p-4 space-y-2">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white rounded-xl px-3 py-2 text-sm font-medium shadow transition"
+          >
+            <LogOut size={16} /> Logout
+          </button>
+
+          {/* <Link href="/dashboard" className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl px-3 py-2 text-sm font-medium shadow hover:from-blue-700 hover:to-blue-800 transition block text-center">
             + New Space
-          </Link>
+          </Link> */}
         </div>
       </aside>
 
