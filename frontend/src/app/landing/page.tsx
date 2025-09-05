@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -328,8 +329,8 @@ const LandingPage = () => {
 
       {/* Hero Section */}
       <section className="pt-28 pb-20 min-h-screen flex items-center bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
-        <div className="container mx-auto px-6">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
             <div 
               data-animate
               id="hero-text"
@@ -340,19 +341,19 @@ const LandingPage = () => {
                 Real-time Collaboration Platform
               </div>
               
-              <h1 className="text-6xl lg:text-7xl font-bold mb-8 leading-tight">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-8 leading-tight">
                 <span className="text-gray-800 dark:text-white">Visual</span><br />
                 <span className="text-blue-600">Brainstorm</span><br />
                 <span className="text-gray-800 dark:text-white">Canvas</span>
               </h1>
               
-              <p className="text-xl text-gray-600 dark:text-gray-300 mb-10 leading-relaxed max-w-lg">
+              <p className="text-base sm:text-lg md:text-xl text-gray-600 dark:text-gray-300 mb-10 leading-relaxed max-w-lg">
                 Transform your team's creative process with real-time collaborative drawing. 
                 Visualize complex ideas, brainstorm together, and bring concepts to life 
                 without the friction of traditional tools.
               </p>
               
-              <div className="flex flex-col sm:flex-row gap-6 mb-12">
+              <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 mb-12">
                 <Link href="/auth" className="px-8 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2 group">
                   <span>Start Creating Free</span>
                   <FaPlay className="group-hover:translate-x-1 transition-transform" />
@@ -396,44 +397,42 @@ const LandingPage = () => {
                   {slides.map((slide, index) => {
                     const IconComponent = slide.icon;
                     return (
-                      <div key={index} className="w-full flex-shrink-0">
-                        <div className="bg-gradient-to-br from-blue-500 to-blue-700 p-12 h-96 flex items-center justify-center relative overflow-hidden">
+                      <div key={index} className="w-full flex-shrink-0 min-w-0">
+                        <div className="bg-gradient-to-br from-blue-500 to-blue-700 p-6 sm:p-12 h-64 sm:h-96 flex items-center justify-center relative overflow-hidden">
                           <div className="absolute inset-0 bg-black/10"></div>
                           <div className="text-center text-white relative z-10">
-                            <IconComponent className="text-8xl mb-6 animate-pulse" />
-                            <h3 className="text-3xl font-bold mb-4">{slide.title}</h3>
-                            <p className="text-xl opacity-90">{slide.description}</p>
+                            <IconComponent className="text-5xl sm:text-8xl mb-4 sm:mb-6 animate-pulse" />
+                            <h3 className="text-xl sm:text-3xl font-bold mb-2 sm:mb-4">{slide.title}</h3>
+                            <p className="text-base sm:text-xl opacity-90">{slide.description}</p>
                           </div>
                           {/* Animated Background Elements */}
-                          <div className="absolute top-4 right-4 w-20 h-20 bg-white/10 rounded-full animate-bounce"></div>
-                          <div className="absolute bottom-8 left-8 w-12 h-12 bg-white/10 rounded-full animate-pulse delay-1000"></div>
+                          <div className="absolute top-4 right-4 w-10 h-10 sm:w-20 sm:h-20 bg-white/10 rounded-full animate-bounce"></div>
+                          <div className="absolute bottom-8 left-8 w-6 h-6 sm:w-12 sm:h-12 bg-white/10 rounded-full animate-pulse delay-1000"></div>
                         </div>
                       </div>
                     );
                   })}
                 </div>
-                
                 {/* Enhanced Controls */}
                 <button 
                   onClick={prevSlide}
-                  className="absolute left-6 top-1/2 transform -translate-y-1/2 bg-white/90 dark:bg-gray-800/90 p-4 rounded-full shadow-lg hover:bg-white dark:hover:bg-gray-700 transition-all duration-200 backdrop-blur-sm"
+                  className="absolute left-2 sm:left-6 top-1/2 transform -translate-y-1/2 bg-white/90 dark:bg-gray-800/90 p-2 sm:p-4 rounded-full shadow-lg hover:bg-white dark:hover:bg-gray-700 transition-all duration-200 backdrop-blur-sm"
                 >
                   <FaChevronLeft className="text-gray-700 dark:text-gray-300" />
                 </button>
                 <button 
                   onClick={nextSlide}
-                  className="absolute right-6 top-1/2 transform -translate-y-1/2 bg-white/90 dark:bg-gray-800/90 p-4 rounded-full shadow-lg hover:bg-white dark:hover:bg-gray-700 transition-all duration-200 backdrop-blur-sm"
+                  className="absolute right-2 sm:right-6 top-1/2 transform -translate-y-1/2 bg-white/90 dark:bg-gray-800/90 p-2 sm:p-4 rounded-full shadow-lg hover:bg-white dark:hover:bg-gray-700 transition-all duration-200 backdrop-blur-sm"
                 >
                   <FaChevronRight className="text-gray-700 dark:text-gray-300" />
                 </button>
-                
                 {/* Progress Indicators */}
-                <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-3">
+                <div className="absolute bottom-3 sm:bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-2 sm:space-x-3">
                   {slides.map((_, index) => (
                     <button
                       key={index}
                       onClick={() => setCurrentSlide(index)}
-                      className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                      className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full transition-all duration-300 ${
                         index === currentSlide ? 'bg-white scale-125' : 'bg-white/50 hover:bg-white/75'
                       }`}
                     />
@@ -441,69 +440,6 @@ const LandingPage = () => {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="py-20 bg-white dark:bg-gray-800 border-y border-gray-200 dark:border-gray-700">
-        <div className="container mx-auto px-6">
-          <div 
-            data-animate
-            id="stats"
-            className={`grid grid-cols-2 md:grid-cols-4 gap-8 transition-all duration-1000 ${isAnimated('stats') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
-          >
-            {stats.map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="text-4xl md:text-5xl font-bold text-blue-600 mb-2">{stat.number}</div>
-                <div className="text-gray-600 dark:text-gray-400 font-medium">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section id="features" className="py-24 bg-gray-50 dark:bg-gray-900">
-        <div className="container mx-auto px-6">
-          <div 
-            data-animate
-            id="features-header"
-            className={`text-center mb-20 transition-all duration-1000 ${isAnimated('features-header') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
-          >
-            <h2 className="text-5xl font-bold mb-6 text-gray-800 dark:text-white">
-              Powerful Features for Modern Teams
-            </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-              Everything you need to collaborate visually, from simple sketches to complex diagrams
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {features.map((feature, index) => {
-              const IconComponent = feature.icon;
-              return (
-                <div 
-                  key={index}
-                  data-animate
-                  id={`feature-${index}`}
-                  className={`p-8 rounded-2xl bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl transition-all duration-500 border border-gray-200 dark:border-gray-700 group hover:scale-105 ${
-                    isAnimated(`feature-${index}`) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-                  }`}
-                  style={{ transitionDelay: `${index * 100}ms` }}
-                >
-                  <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                    <IconComponent className="text-2xl text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <h3 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">
-                    {feature.title}
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                    {feature.description}
-                  </p>
-                </div>
-              );
-            })}
           </div>
         </div>
       </section>
