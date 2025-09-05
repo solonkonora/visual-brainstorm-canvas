@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FaPalette, FaUser, FaEnvelope, FaLock } from 'react-icons/fa';
+import { BACKEND_URL } from '@/lib/env';
 
 const AuthPage = () => {
   const router = useRouter();
@@ -18,9 +19,10 @@ const AuthPage = () => {
     setError(null);
 
     try {
+
       const url = isLogin
-        ? 'http://localhost:3005/users/login'
-        : 'http://localhost:3005/users/signup';
+        ? `${BACKEND_URL}/users/login`
+        : `${BACKEND_URL}/users/signup`;
 
       const response = await fetch(url, {
         method: 'POST',
@@ -37,7 +39,8 @@ const AuthPage = () => {
         throw new Error(errorData.message || 'Authentication failed');
       }
 
-      await fetch('http://localhost:3005/users/current_user', {
+
+      await fetch(`${BACKEND_URL}/users/current_user`, {
         method: 'GET',
         credentials: 'include',
       });
