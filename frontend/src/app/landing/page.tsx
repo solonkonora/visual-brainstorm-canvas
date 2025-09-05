@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import SocketTest from './SocketTest';
 import {
   FaPalette,
   FaSun,
@@ -441,6 +442,13 @@ const LandingPage = () => {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Socket Test Component - Remove this in production */}
+      <section className="py-12 bg-gray-100 dark:bg-gray-800">
+        <div className="container mx-auto px-6">
+          <SocketTest />
         </div>
       </section>
 

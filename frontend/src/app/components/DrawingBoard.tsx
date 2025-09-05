@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import {
   Stage, Layer, Line, Rect, Circle, Text, Transformer
@@ -31,6 +31,7 @@ const DrawingBoard: React.FC = () => {
     setTool,
     setColor: setBrushColor,
     setBrushSize,
+    setIsDrawing,
     addShape,
     updateShapes,
     deleteShapes,
@@ -48,6 +49,7 @@ const DrawingBoard: React.FC = () => {
   const [selectionRect, setSelectionRect] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
   const [connectTemp, setConnectTemp] = useState<string | null>(null);
   const [roomId] = useState('demo-room-1');
+  const [canvasSize, setCanvasSize] = useState({ width: 1200, height: 800 });
   const stageRef = useRef<Konva.Stage | null>(null);
   const trRef = useRef<Konva.Transformer | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -64,6 +66,88 @@ const DrawingBoard: React.FC = () => {
       disconnectSocket();
     };
   }, [roomId, initializeSocket, disconnectSocket, loadCanvas]);
+
+  // Handle window resize
+  useEffect(() => {
+    const updateCanvasSize = () => {
+      if (typeof window !== 'undefined') {
+        setCanvasSize({
+          width: window.innerWidth - 64,
+          height: window.innerHeight - 64
+        });
+      }
+    };
+
+    updateCanvasSize();
+    window.addEventListener('resize', updateCanvasSize);
+    return () => window.removeEventListener('resize', updateCanvasSize);
+  }, []);
+
+  // Handler functions (defined before useEffect that uses them)
+  const handleClear = () => {
+    updateShapes([]);
+    setSelectedIds([]);
+  };
+  
+  const handleSave = useCallback(() => {
+    if (!stageRef.current) return;
+    
+    // Export as image
+    const uri = stageRef.current.toDataURL({ pixelRatio: 2 });
+    const link = document.createElement('a');
+    link.download = 'drawing.png';
+    link.href = uri;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Save to database
+    saveCanvas();
+  }, [saveCanvas]);
+  
+  const handleDelete = useCallback(() => {
+    if (selectedIds.length === 0) return;
+    deleteShapes(selectedIds);
+    setSelectedIds([]);
+  }, [selectedIds, deleteShapes, setSelectedIds]);
+
+  // Handle keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Prevent browser shortcuts when focusing on canvas
+      if (e.target === document.body || (e.target as Element)?.tagName === 'CANVAS') {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+          e.preventDefault();
+          undo();
+        }
+        if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+          e.preventDefault();
+          redo();
+        }
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+          e.preventDefault();
+          handleSave();
+        }
+        if (e.key === 'Delete' || e.key === 'Backspace') {
+          e.preventDefault();
+          handleDelete();
+        }
+        
+        // Tool shortcuts
+        switch(e.key.toLowerCase()) {
+          case 'b': setTool('brush'); break;
+          case 'e': setTool('eraser'); break;
+          case 'r': setTool('rect'); break;
+          case 'c': setTool('circle'); break;
+          case 't': setTool('text'); break;
+          case 'v': setTool('select'); break;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [undo, redo, handleSave, handleDelete, setTool]);
 
   // Keep transformer in sync with selected nodes
   useEffect(() => {
@@ -115,6 +199,7 @@ const DrawingBoard: React.FC = () => {
         setSelectionRect({ x: pos.x, y: pos.y, w: 0, h: 0 });
         setSelectedIds([]);
       } else if (currentTool === 'brush' || currentTool === 'eraser') {
+        setIsDrawing(true);
         const newShape: ShapeType = {
           id: Date.now().toString(),
           type: 'line',
@@ -230,6 +315,8 @@ const DrawingBoard: React.FC = () => {
   };
 
   const handleMouseUp = () => {
+    setIsDrawing(false);
+    
     if (selectionRect) {
       const rect = normalizeRect(selectionRect);
       const ids = shapes
@@ -256,33 +343,6 @@ const DrawingBoard: React.FC = () => {
       );
       updateShapes(updatedShapes);
     }
-  };
-
-  const handleClear = () => {
-    updateShapes([]);
-    setSelectedIds([]);
-  };
-  
-  const handleSave = () => {
-    if (!stageRef.current) return;
-    
-    // Export as image
-    const uri = stageRef.current.toDataURL({ pixelRatio: 2 });
-    const link = document.createElement('a');
-    link.download = 'drawing.png';
-    link.href = uri;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    // Save to database
-    saveCanvas();
-  };
-  
-  const handleDelete = () => {
-    if (selectedIds.length === 0) return;
-    deleteShapes(selectedIds);
-    setSelectedIds([]);
   };
 
   return (
@@ -374,8 +434,8 @@ const DrawingBoard: React.FC = () => {
         <div className="mt-16 h-[calc(100vh-4rem)]">
           <Stage
             ref={stageRef}
-            width={window.innerWidth - 64}
-            height={window.innerHeight - 64}
+            width={canvasSize.width}
+            height={canvasSize.height}
             onMouseDown={handleMouseDown}
             onMousemove={handleMouseMove}
             onMouseup={handleMouseUp}
