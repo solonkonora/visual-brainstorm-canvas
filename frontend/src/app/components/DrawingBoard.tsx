@@ -13,6 +13,7 @@ import {
 } from 'react-icons/fa';
 import Konva from 'konva';
 import { useTheme } from '../context/theme-context';
+import { BACKEND_URL } from '@/lib/env';
 
 interface ShapeType {
   id: string;
@@ -47,11 +48,45 @@ const DrawingBoard: React.FC = () => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [selectionRect, setSelectionRect] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
   const [connectTemp, setConnectTemp] = useState<string | null>(null); // store first selected shape id when creating connector
+  const [canvasId, setCanvasId] = useState<string | null>(null);
   const stageRef = useRef<Konva.Stage | null>(null);
   const trRef = useRef<Konva.Transformer | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const { theme, toggleTheme } = useTheme();
+
+  // Create a new canvas when the component loads
+  useEffect(() => {
+    const createCanvas = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          console.error('No authentication token found');
+          return;
+        }
+
+        const response = await fetch(`${BACKEND_URL}/api/canvases`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setCanvasId(data.canvasId);
+          console.log('Canvas created successfully:', data.canvasId);
+        } else {
+          console.error('Failed to create canvas');
+        }
+      } catch (error) {
+        console.error('Error creating canvas:', error);
+      }
+    };
+
+    createCanvas();
+  }, []);
 
   // Load saved shapes from localStorage on mount
   useEffect(() => {
@@ -378,7 +413,38 @@ const DrawingBoard: React.FC = () => {
     setShapes([]);
     setSelectedIds([]);
   };
-  const handleSave = () => {
+  const handleSave = async () => {
+    // Save to backend
+    if (canvasId) {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          alert('You must be logged in to save the canvas');
+          return;
+        }
+
+        const response = await fetch(`${BACKEND_URL}/api/canvases/${canvasId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ strokes: shapes }),
+        });
+
+        if (response.ok) {
+          alert('Canvas saved successfully!');
+        } else {
+          const errorData = await response.json();
+          alert(`Failed to save canvas: ${errorData.error || 'Unknown error'}`);
+        }
+      } catch (error) {
+        console.error('Error saving canvas:', error);
+        alert('Error saving canvas');
+      }
+    }
+
+    // Also save as image
     if (!stageRef.current) return;
     const uri = stageRef.current.toDataURL({ pixelRatio: 2 });
     const link = document.createElement('a');
