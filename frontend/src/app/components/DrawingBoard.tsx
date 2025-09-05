@@ -8,8 +8,9 @@ import {
 } from 'react-konva';
 import {
   FaPen, FaEraser, FaSquare, FaCircle, FaTextHeight,
-  FaUndo, FaRedo, FaTrash, FaSave, FaSun, FaMoon,
-  FaCommentDots, FaShapes, FaArrowLeft, FaLink, FaImage
+  FaUndo, FaRedo, FaTrash, FaSun, FaMoon,
+  FaCommentDots, FaShapes, FaArrowLeft, FaLink, FaImage,
+  FaDownload, FaDatabase, FaSpinner, FaCheck, FaTimes
 } from 'react-icons/fa';
 import Konva from 'konva';
 import { useTheme } from '../context/theme-context';
@@ -26,6 +27,8 @@ const DrawingBoard: React.FC = () => {
     isDrawing,
     history,
     connectedUsers,
+    isLoading,
+    error,
     
     // Actions
     setTool,
@@ -50,6 +53,9 @@ const DrawingBoard: React.FC = () => {
   const [connectTemp, setConnectTemp] = useState<string | null>(null);
   const [roomId] = useState('demo-room-1');
   const [canvasSize, setCanvasSize] = useState({ width: 1200, height: 800 });
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
+  const [saveMessage, setSaveMessage] = useState<string>('');
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const stageRef = useRef<Konva.Stage | null>(null);
   const trRef = useRef<Konva.Transformer | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -89,21 +95,50 @@ const DrawingBoard: React.FC = () => {
     setSelectedIds([]);
   };
   
-  const handleSave = useCallback(() => {
+  const handleDownload = useCallback(() => {
     if (!stageRef.current) return;
     
     // Export as image
     const uri = stageRef.current.toDataURL({ pixelRatio: 2 });
     const link = document.createElement('a');
-    link.download = 'drawing.png';
+    link.download = `canvas-${roomId}-${new Date().toISOString().split('T')[0]}.png`;
     link.href = uri;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     
-    // Save to database
-    saveCanvas();
-  }, [saveCanvas]);
+    // Show success message
+    setSaveStatus('success');
+    setSaveMessage('Canvas downloaded successfully!');
+    setTimeout(() => {
+      setSaveStatus('idle');
+      setSaveMessage('');
+    }, 3000);
+  }, [roomId]);
+  
+  const handleSaveToDatabase = useCallback(async () => {
+    setSaveStatus('saving');
+    setSaveMessage('Saving to database...');
+    
+    try {
+      await saveCanvas();
+      const now = new Date();
+      setLastSaved(now);
+      setSaveStatus('success');
+      setSaveMessage(`Canvas saved successfully! (${shapes.length} shapes)`);
+      setTimeout(() => {
+        setSaveStatus('idle');
+        setSaveMessage('');
+      }, 3000);
+    } catch (err) {
+      setSaveStatus('error');
+      setSaveMessage(`Failed to save: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      setTimeout(() => {
+        setSaveStatus('idle');
+        setSaveMessage('');
+      }, 5000);
+    }
+  }, [saveCanvas, shapes.length]);
   
   const handleDelete = useCallback(() => {
     if (selectedIds.length === 0) return;
@@ -126,7 +161,7 @@ const DrawingBoard: React.FC = () => {
         }
         if ((e.ctrlKey || e.metaKey) && e.key === 's') {
           e.preventDefault();
-          handleSave();
+          handleSaveToDatabase();
         }
         if (e.key === 'Delete' || e.key === 'Backspace') {
           e.preventDefault();
@@ -147,7 +182,18 @@ const DrawingBoard: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [undo, redo, handleSave, handleDelete, setTool]);
+  }, [undo, redo, handleSaveToDatabase, handleDelete, setTool]);
+
+  // Auto-save functionality - save every 2 minutes if there are unsaved changes
+  useEffect(() => {
+    const autoSaveInterval = setInterval(() => {
+      if (shapes.length > 0 && saveStatus === 'idle') {
+        handleSaveToDatabase();
+      }
+    }, 120000); // 2 minutes
+
+    return () => clearInterval(autoSaveInterval);
+  }, [shapes.length, saveStatus, handleSaveToDatabase]);
 
   // Keep transformer in sync with selected nodes
   useEffect(() => {
@@ -409,18 +455,74 @@ const DrawingBoard: React.FC = () => {
             <button onClick={handleDelete} disabled={selectedIds.length === 0} className="p-2 bg-slate-200 dark:bg-slate-700 rounded-lg disabled:opacity-50">
               <FaTrash />
             </button>
-            <button onClick={handleClear} className="p-2 bg-slate-200 dark:bg-slate-700 rounded-lg">
+            <button onClick={handleClear} className="p-2 bg-slate-200 dark:bg-slate-700 rounded-lg" title="Clear Canvas">
               <FaShapes />
             </button>
-            <button onClick={handleSave} className="p-2 bg-slate-200 dark:bg-slate-700 rounded-lg">
-              <FaSave />
+            
+            {/* Download Button */}
+            <button 
+              onClick={handleDownload} 
+              className="p-2 bg-slate-200 dark:bg-slate-700 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600" 
+              title="Download as Image"
+            >
+              <FaDownload />
+            </button>
+            
+            {/* Save to Database Button */}
+            <button 
+              onClick={handleSaveToDatabase}
+              disabled={saveStatus === 'saving'}
+              className={`p-2 rounded-lg transition-all ${
+                saveStatus === 'saving' 
+                  ? 'bg-blue-500 text-white cursor-not-allowed' 
+                  : saveStatus === 'success'
+                  ? 'bg-green-500 text-white'
+                  : saveStatus === 'error'
+                  ? 'bg-red-500 text-white'
+                  : 'bg-slate-200 dark:bg-slate-700 hover:bg-blue-100 dark:hover:bg-slate-600'
+              }`}
+              title={
+                saveStatus === 'saving' ? 'Saving...' :
+                saveStatus === 'success' ? 'Saved successfully!' :
+                saveStatus === 'error' ? 'Save failed' :
+                'Save to Database (Ctrl+S)'
+              }
+            >
+              {saveStatus === 'saving' ? (
+                <FaSpinner className="animate-spin" />
+              ) : saveStatus === 'success' ? (
+                <FaCheck />
+              ) : saveStatus === 'error' ? (
+                <FaTimes />
+              ) : (
+                <FaDatabase />
+              )}
             </button>
           </div>
 
-          <div className="flex items-center space-x-2">
+          {/* Notification Area */}
+          <div className="flex items-center space-x-4">
+            {saveMessage && (
+              <div className={`px-3 py-1 rounded text-sm transition-all ${
+                saveStatus === 'success' ? 'bg-green-100 text-green-800' :
+                saveStatus === 'error' ? 'bg-red-100 text-red-800' :
+                saveStatus === 'saving' ? 'bg-blue-100 text-blue-800' :
+                'bg-gray-100 text-gray-800'
+              }`}>
+                {saveMessage}
+              </div>
+            )}
             <span className={`px-2 py-1 rounded text-sm bg-green-100 text-green-800`}>
               Connected ({connectedUsers.length} users)
             </span>
+            <span className={`px-2 py-1 rounded text-sm bg-blue-100 text-blue-800`}>
+              {shapes.length} shapes
+            </span>
+            {lastSaved && (
+              <span className={`px-2 py-1 rounded text-sm bg-gray-100 text-gray-700`}>
+                Last saved: {lastSaved.toLocaleTimeString()}
+              </span>
+            )}
             <button onClick={toggleTheme} className="p-2 bg-slate-200 dark:bg-slate-700 rounded-lg">
               {theme === 'dark' ? <FaSun /> : <FaMoon />}
             </button>
