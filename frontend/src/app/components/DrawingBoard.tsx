@@ -20,7 +20,7 @@ interface ShapeType {
   points?: number[]; // for line/connector
   x?: number;
   y?: number;
-  width?: number;
+  width?: number; 
   height?: number;
   radius?: number;
   color?: string;
@@ -596,22 +596,22 @@ const DrawingBoard: React.FC = () => {
       <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
 
       {/* Top Toolbar */}
-      <div className="absolute top-0 left-0 w-full flex items-center justify-between px-4 py-2 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 z-50">
+      <div className="absolute top-0 left-0 w-full flex items-center justify-between px-4 py-2 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 z-50 flex-wrap">
         <div className="flex items-center space-x-3">
           <span className="font-bold text-lg">My First Board</span>
         </div>
         <div className="flex items-center space-x-2">
-          <Link href="/general-dashboard" className="p-2 bg-slate-200 dark:bg-slate-700 rounded-lg"><FaArrowLeft /></Link>
-          <button onClick={handleUndo} className="p-2 bg-slate-200 dark:bg-slate-700 rounded-lg"><FaUndo /></button>
-          <button onClick={handleRedo} className="p-2 bg-slate-200 dark:bg-slate-700 rounded-lg"><FaRedo /></button>
-          <button onClick={handleClear} className="p-2 bg-slate-200 dark:bg-slate-700 rounded-lg"><FaTrash /></button>
-          <button onClick={toggleTheme} className="p-2 bg-blue-500 text-white rounded-lg">{theme === 'dark' ? <FaSun /> : <FaMoon />}</button>
-          <button onClick={handleSave} className="p-2 bg-blue-600 text-white rounded-lg"><FaSave /> Save</button>
+          <Link href="/general-dashboard" className="p-2 bg-slate-200 dark:bg-slate-700 rounded-xl"><FaArrowLeft /></Link>
+          <button onClick={handleUndo} className="p-2 bg-slate-200 dark:bg-slate-700 rounded-xl"><FaUndo /></button>
+          <button onClick={handleRedo} className="p-2 bg-slate-200 dark:bg-slate-700 rounded-xl"><FaRedo /></button>
+          <button onClick={handleClear} className="p-2 bg-slate-200 dark:bg-slate-700 rounded-xl"><FaTrash /></button>
+          <button onClick={toggleTheme} className="p-2 bg-blue-500 text-white rounded-xl">{theme === 'dark' ? <FaSun /> : <FaMoon />}</button>
+          <button onClick={handleSave} className="p-2 bg-blue-600 text-white rounded-xl"><FaSave /> Save</button>
         </div>
       </div>
 
       {/* Left Toolbar */}
-      <div className="absolute top-20 left-4 flex flex-col space-y-3 z-50 bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-lg">
+      <div className="absolute top-20 left-4 flex flex-col space-y-3 z-50 bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-lg sm:left-2 sm:top-16">
         <button onClick={() => setTool('brush')} className={`p-3 rounded-lg ${tool === 'brush' ? 'bg-blue-500 text-white' : 'bg-slate-200 dark:bg-slate-700'}`} title="Brush (b)"><FaPen /></button>
         <button onClick={() => setTool('eraser')} className={`p-3 rounded-lg ${tool === 'eraser' ? 'bg-blue-500 text-white' : 'bg-slate-200 dark:bg-slate-700'}`} title="Eraser (e)"><FaEraser /></button>
         <button onClick={() => setTool('rect')} className={`p-3 rounded-lg ${tool === 'rect' ? 'bg-blue-500 text-white' : 'bg-slate-200 dark:bg-slate-700'}`} title="Rectangle (r)"><FaSquare /></button>
@@ -622,25 +622,25 @@ const DrawingBoard: React.FC = () => {
 
         <div className="mt-2 border-t pt-2">
           <div className="text-xs">Brush size</div>
-          <input type="range" min={1} max={40} value={brushSize} onChange={(e) => setBrushSize(Number(e.target.value))} />
+          <input type="range" min={1} max={40} value={brushSize} onChange={(e) => setBrushSize(Number(e.target.value))} className="rounded-full" />
           <div className="text-xs mt-2">Color</div>
-          <input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="w-10 h-10 rounded-lg mt-1 cursor-pointer" />
+          <input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="w-10 h-10 rounded-2xl mt-1 cursor-pointer" />
         </div>
 
       </div>
 
       {/* Right Inspector / Actions */}
-      <div className="absolute top-20 right-4 z-50">
-        <div className="flex flex-col gap-2 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-lg">
+      <div className="absolute top-20 right-4 z-50 sm:right-2 sm:top-16">
+        <div className="flex flex-col gap-2 bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-lg">
           <div className="font-semibold">Selection</div>
           <div className="text-sm">Selected: {selectedIds.length}</div>
           <div className="flex gap-2 mt-2">
-            <button onClick={handleGroup} className="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded"><FaObjectGroup /></button>
-            <button onClick={handleUngroup} className="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded"><FaObjectUngroup /></button>
-            <button onClick={() => handleAlign('left')} className="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded" title="Align left"><FaAlignLeft /></button>
-            <button onClick={() => handleAlign('center')} className="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded" title="Align center"><FaAlignCenter /></button>
-            <button onClick={() => handleAlign('right')} className="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded" title="Align right"><FaAlignRight /></button>
-            <button onClick={() => handleAlign('distribute')} className="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded" title="Distribute"><FaArrowsAltH /></button>
+            <button onClick={handleGroup} className="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded-xl"><FaObjectGroup /></button>
+            <button onClick={handleUngroup} className="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded-xl"><FaObjectUngroup /></button>
+            <button onClick={() => handleAlign('left')} className="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded-xl" title="Align left"><FaAlignLeft /></button>
+            <button onClick={() => handleAlign('center')} className="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded-xl" title="Align center"><FaAlignCenter /></button>
+            <button onClick={() => handleAlign('right')} className="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded-xl" title="Align right"><FaAlignRight /></button>
+            <button onClick={() => handleAlign('distribute')} className="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded-xl" title="Distribute"><FaArrowsAltH /></button>
           </div>
         </div>
       </div>
@@ -653,7 +653,7 @@ const DrawingBoard: React.FC = () => {
           onMouseDown={handleMouseDown}
           onMousemove={handleMouseMove}
           onMouseup={handleMouseUp}
-          ref={(node) => (stageRef.current = node)}
+          ref={(node) => { stageRef.current = node; }}
           className="cursor-crosshair"
         >
           <Layer id="main-layer">
@@ -697,6 +697,7 @@ const DrawingBoard: React.FC = () => {
                     width={shape.width ?? 120}
                     height={shape.height ?? 80}
                     fill={shape.color}
+                    cornerRadius={10}
                     draggable={!!shape.draggable}
                     onDragEnd={(e) => onDragEnd(shape.id, e)}
                     onClick={() => {
@@ -814,7 +815,7 @@ const DrawingBoard: React.FC = () => {
                       const relX = (child.x ?? 0) - (shape.x ?? 0);
                       const relY = (child.y ?? 0) - (shape.y ?? 0);
                       if (child.type === 'rect') {
-                        return <Rect key={child.id} id={child.id} x={relX} y={relY} width={child.width} height={child.height} fill={child.color} />;
+                        return <Rect key={child.id} id={child.id} x={relX} y={relY} width={child.width} height={child.height} fill={child.color} cornerRadius={10} />;
                       }
                       if (child.type === 'text') {
                         return <Text key={child.id} id={child.id} x={relX} y={relY} text={child.text || ''} fontSize={18} fill={child.color} />;
@@ -834,7 +835,7 @@ const DrawingBoard: React.FC = () => {
             })}
 
             {/* transformer for selected nodes */}
-            <Transformer ref={(node) => (trRef.current = node)} rotateEnabled enabledAnchors={['top-left', 'top-right', 'bottom-left', 'bottom-right']} />
+            <Transformer ref={(node) => { trRef.current = node; }} rotateEnabled enabledAnchors={['top-left', 'top-right', 'bottom-left', 'bottom-right']} />
 
             {/* temporary connector rubberband render if building a connector */}
             {tool === 'connect' && connectTemp && (() => {

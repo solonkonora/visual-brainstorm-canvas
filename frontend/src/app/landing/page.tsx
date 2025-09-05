@@ -306,7 +306,7 @@ const LandingPage = () => {
                 <button 
                   key={section}
                   onClick={() => scrollToSection(section)}
-                  className="block w-full text-left text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors py-3 text-lg capitalize"
+                  className="block w-full text-left text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors py-3 text-lg capitalize rounded-lg"
                 >
                   {section.replace('-', ' ')}
                 </button>
@@ -672,7 +672,7 @@ const LandingPage = () => {
                   </div>
                 )}
                 <h3 className="text-2xl font-bold mb-4 text-gray-800 dark:text-white text-center">
-                  {plan.name}
+                  {plan.name} 
                 </h3>
                 <div className="text-center mb-6">
                   <span className="text-5xl font-bold text-blue-600">{plan.price}</span>
