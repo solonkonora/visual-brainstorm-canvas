@@ -3,11 +3,13 @@
 import { useState, useEffect } from "react";
 import { Home, Compass, Star, Bell, Gift, UserPlus, Menu, LogOut } from "lucide-react";
 import Link from 'next/link';
+import { FaPalette } from "react-icons/fa";
 
 export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [user, setUser] = useState<{ name: string; email: string } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [boards, setBoards] = useState<Array<{ name: string; modified: string; owner: string }>>([]);
   
   const templates = [
     { name: "Blank board", color: "from-blue-500 to-blue-700" },
@@ -21,12 +23,7 @@ export default function Dashboard() {
     { name: "Customer Touchpoint...", color: "from-cyan-500 to-cyan-700" },
   ];
 
-  const boards = [
-    { name: "My First Board", modified: "Today", owner: "Davy Kennang" },
-    { name: "Untitled", modified: "Today", owner: "Davy Kennang" },
-  ];
-
-  // Fetch current user information
+  // Fetch current user information and boards
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
@@ -46,8 +43,23 @@ export default function Dashboard() {
           const userData = await response.json();
           setUser(userData);
         }
+
+        // Fetch boards data
+        const boardsResponse = await fetch('http://localhost:3000/recent-drawings', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (boardsResponse.ok) {
+          const boardsData = await boardsResponse.json();
+          setBoards(boardsData);
+        } else {
+          setBoards([]);
+        }
       } catch (error) {
-        console.error('Error fetching current user:', error);
+        console.error('Error fetching data:', error);
+        setBoards([]);
       } finally {
         setLoading(false);
       }
@@ -120,9 +132,9 @@ export default function Dashboard() {
       >
         <div className="p-4 font-semibold text-gray-800 dark:text-gray-200 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center text-white font-bold shadow-md">
-              VB
-            </div>
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl flex items-center justify-center shadow-lg">
+                           <FaPalette className="text-white text-lg" />
+                         </div>
             <span>Visual board</span>
           </div>
           <button
@@ -174,7 +186,7 @@ export default function Dashboard() {
         <header className="h-16 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex items-center justify-between px-6 shadow-sm">
           <div className="text-2xl font-bold text-gray-700 dark:text-gray-200 flex items-center gap-2">
             Dashboard
-            <span className="text-xs bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-lg">Free</span>
+            {/* <span className="text-xs bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-lg">Free</span> */}
           </div>
           <div className="flex items-center gap-3">
             <button 
@@ -183,11 +195,11 @@ export default function Dashboard() {
             >
               <UserPlus size={16} /> Invite members
             </button>
-            <button className="bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm px-3 py-1 rounded-lg hover:from-blue-700 hover:to-blue-800 shadow">
+            {/* <button className="bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm px-3 py-1 rounded-lg hover:from-blue-700 hover:to-blue-800 shadow">
               Upgrade
             </button>
             <Gift size={20} className="text-gray-600 dark:text-gray-300" />
-            <Bell size={20} className="text-gray-600 dark:text-gray-300" />
+            <Bell size={20} className="text-gray-600 dark:text-gray-300" /> */}
             {loading ? (
               <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-700 animate-pulse"></div>
             ) : user ? (
@@ -225,7 +237,7 @@ export default function Dashboard() {
         <div className="px-2 sm:px-6 py-6">
           <h2 className="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-200">Boards in this team</h2>
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 mb-6 text-sm">
+          {/* <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 mb-6 text-sm">
             <select className="border rounded-lg px-2 py-1 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 w-full sm:w-auto">
               <option>All boards</option>
             </select>
@@ -235,7 +247,7 @@ export default function Dashboard() {
             <select className="border rounded-lg px-2 py-1 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 w-full sm:w-auto">
               <option>Last opened</option>
             </select>
-          </div>
+          </div> */}
 
           <div className="overflow-x-auto">
             <table className="min-w-full border-t border-gray-200 dark:border-gray-700 text-sm">

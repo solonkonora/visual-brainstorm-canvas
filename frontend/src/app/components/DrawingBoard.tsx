@@ -3,6 +3,7 @@
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation'; 
 import {
   Stage, Layer, Line, Rect, Circle, Text, Transformer
 } from 'react-konva';
@@ -10,14 +11,19 @@ import {
   FaPen, FaEraser, FaSquare, FaCircle, FaTextHeight,
   FaUndo, FaRedo, FaTrash, FaSun, FaMoon,
   FaCommentDots, FaShapes, FaArrowLeft, FaLink, FaImage,
-  FaDownload, FaDatabase, FaSpinner, FaCheck, FaTimes
+  FaDownload, FaDatabase, FaSpinner, FaCheck, FaTimes,
+  FaAlignLeft, FaAlignCenter, FaAlignRight
 } from 'react-icons/fa';
 import Konva from 'konva';
 import { useTheme } from '../context/theme-context';
 
 import { useCanvasStore, type ShapeType } from '@/stores/canvasStore';
+import ChatWindow from './ChatWindow';
 
 const DrawingBoard: React.FC = () => {
+  const params = useParams();
+  const canvasId = params.canvasId as string; // Access the dynamic parameter directly
+  
   const {
     // State
     shapes,
@@ -53,11 +59,11 @@ const DrawingBoard: React.FC = () => {
   const [selectionRect, setSelectionRect] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
 
   const [connectTemp, setConnectTemp] = useState<string | null>(null);
-  const [roomId] = useState('demo-room-1');
   const [canvasSize, setCanvasSize] = useState({ width: 1200, height: 800 });
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   const [saveMessage, setSaveMessage] = useState<string>('');
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   const stageRef = useRef<Konva.Stage | null>(null);
   const trRef = useRef<Konva.Transformer | null>(null);
@@ -66,16 +72,17 @@ const DrawingBoard: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
 
   // Initialize Socket.IO connections and load canvas
-
   useEffect(() => {
-    const userId = 'user-' + Date.now();
-    initializeSocket(roomId, userId);
-    loadCanvas(roomId);
+    if (canvasId) {
+      const userId = 'user-' + Date.now();
+      initializeSocket(canvasId, userId);
+      loadCanvas(canvasId);
+    }
 
     return () => {
       disconnectSocket();
     };
-  }, [roomId, initializeSocket, disconnectSocket, loadCanvas]);
+  }, [canvasId, initializeSocket, disconnectSocket, loadCanvas]);
 
   // Handle window resize
   useEffect(() => {
@@ -105,7 +112,7 @@ const DrawingBoard: React.FC = () => {
     // Export as image
     const uri = stageRef.current.toDataURL({ pixelRatio: 2 });
     const link = document.createElement('a');
-    link.download = `canvas-${roomId}-${new Date().toISOString().split('T')[0]}.png`;
+    link.download = `canvas-${canvasId}-${new Date().toISOString().split('T')[0]}.png`;
     link.href = uri;
     document.body.appendChild(link);
     link.click();
@@ -118,7 +125,7 @@ const DrawingBoard: React.FC = () => {
       setSaveStatus('idle');
       setSaveMessage('');
     }, 3000);
-  }, [roomId]);
+  }, [canvasId]);
   
   const handleSaveToDatabase = useCallback(async () => {
     setSaveStatus('saving');
@@ -395,10 +402,9 @@ const DrawingBoard: React.FC = () => {
       updateShapes(updatedShapes);
 
     }
-  };
+  }; 
 
   return (
-
     <div className="h-screen flex bg-white dark:bg-gray-900">
       {/* Left Toolbar */}
       <div className="w-16 bg-slate-100 dark:bg-slate-800 flex flex-col items-center py-4 space-y-2">
@@ -475,6 +481,31 @@ const DrawingBoard: React.FC = () => {
             >
               <FaDownload />
             </button>
+
+            {/* Copy Sharable Link Button */}
+           <button
+  onClick={() => {
+    // Check if the Clipboard API is available
+    if (navigator.clipboard) {
+      const shareLink = window.location.href;
+      navigator.clipboard.writeText(shareLink);
+      setSaveStatus('success');
+      setSaveMessage('Link copied to clipboard!');
+    } else {
+      // Fallback for non-secure contexts or older browsers
+      setSaveStatus('error');
+      setSaveMessage('Clipboard access is not available.');
+    }
+    setTimeout(() => {
+      setSaveStatus('idle');
+      setSaveMessage('');
+    }, 3000);
+  }}
+  className="p-2 bg-slate-200 dark:bg-slate-700 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600"
+  title="Copy Sharable Link"
+>
+  <FaLink />
+</button>
             
             {/* Save to Database Button */}
             <button 
@@ -535,8 +566,33 @@ const DrawingBoard: React.FC = () => {
             <button onClick={toggleTheme} className="p-2 bg-slate-200 dark:bg-slate-700 rounded-lg">
               {theme === 'dark' ? <FaSun /> : <FaMoon />}
             </button>
-            <button className="p-2 bg-slate-200 dark:bg-slate-700 rounded-lg">
+            <button
+              onClick={() => setIsChatOpen(!isChatOpen)}
+              className={`p-3 rounded-lg ${isChatOpen ? 'bg-blue-500 text-white' : 'bg-slate-200 dark:bg-slate-700'}`}
+              title="Toggle Chat"
+            >
               <FaCommentDots />
+            </button>
+            <button
+              onClick={() => setTool('text-align-left')}
+              className={`p-3 rounded-lg ${currentTool === 'text-align-left' ? 'bg-blue-500 text-white' : 'bg-slate-200 dark:bg-slate-700'}`}
+              title="Align Text Left"
+            >
+              <FaAlignLeft />
+            </button>
+            <button
+              onClick={() => setTool('text-align-center')}
+              className={`p-3 rounded-lg ${currentTool === 'text-align-center' ? 'bg-blue-500 text-white' : 'bg-slate-200 dark:bg-slate-700'}`}
+              title="Align Text Center"
+            >
+              <FaAlignCenter />
+            </button>
+            <button
+              onClick={() => setTool('text-align-right')}
+              className={`p-3 rounded-lg ${currentTool === 'text-align-right' ? 'bg-blue-500 text-white' : 'bg-slate-200 dark:bg-slate-700'}`}
+              title="Align Text Right"
+            >
+              <FaAlignRight />
             </button>
           </div>
         </div>
@@ -556,7 +612,6 @@ const DrawingBoard: React.FC = () => {
               {shapes.map((shape) => {
                 if (shape.type === 'line') {
                   return (
-
                     <Line
                       key={shape.id}
                       id={shape.id}
@@ -602,7 +657,6 @@ const DrawingBoard: React.FC = () => {
                       draggable={shape.draggable}
                       onDragEnd={(e) => onDragEnd(shape.id, e)}
                     />
-
                   );
                 }
                 
@@ -695,6 +749,12 @@ const DrawingBoard: React.FC = () => {
             reader.readAsDataURL(file);
           }
         }}
+      />
+
+      {/* Chat Window */}
+      <ChatWindow
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
       />
     </div>
   );

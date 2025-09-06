@@ -70,7 +70,7 @@ interface CanvasState {
   redoStack: ShapeType[][];
   
   // Drawing state
-  tool: 'brush' | 'eraser' | 'rect' | 'circle' | 'text' | 'connect' | 'image' | 'select';
+  tool: 'brush' | 'eraser' | 'rect' | 'circle' | 'text' | 'connect' | 'image' | 'select' | 'text-align-left' | 'text-align-center' | 'text-align-right';
   color: string;
   brushSize: number;
   isDrawing: boolean;

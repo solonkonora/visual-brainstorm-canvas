@@ -227,16 +227,16 @@ const LandingPage = () => {
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center shadow-lg">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl flex items-center justify-center shadow-lg">
                 <FaPalette className="text-white text-lg" />
               </div>
               <div>
                 <div className="text-xl font-bold text-gray-800 dark:text-white">
                   Visual Brainstorm Canvas
                 </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">
+                {/* <div className="text-xs text-gray-500 dark:text-gray-400">
                   Collaborate • Create • Connect
-                </div>
+                </div> */}
               </div>
             </div>
             
@@ -265,7 +265,7 @@ const LandingPage = () => {
               >
                 Pricing
               </button>
-              <Link href="/auth" className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 shadow-md hover:shadow-lg">
+              <Link href="/auth" className="px-6 py-2 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all duration-200 shadow-md hover:shadow-lg">
                 Get Started
               </Link>
               <button 
@@ -312,7 +312,7 @@ const LandingPage = () => {
                   {section.replace('-', ' ')}
                 </button>
               ))}
-              <Link href="/auth" className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all text-center">
+              <Link href="/auth" className="w-full px-6 py-3 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all text-center">
                 Get Started
               </Link>
               <button 
@@ -354,13 +354,13 @@ const LandingPage = () => {
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 mb-12">
-                <Link href="/auth" className="px-8 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2 group">
+                <Link href="/auth" className="px-8 py-4 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2 group">
                   <span>Start Creating Free</span>
                   <FaPlay className="group-hover:translate-x-1 transition-transform" />
                 </Link>
-                <button className="px-8 py-4 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-300">
+                {/* <button className="px-8 py-4 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-300">
                   Watch Demo (2 min)
-                </button>
+                </button> */}
               </div>
               
               <div className="flex flex-wrap gap-8 text-sm text-gray-500 dark:text-gray-400">
@@ -650,12 +650,12 @@ const LandingPage = () => {
               Join thousands of teams already using Visual Brainstorm Canvas to collaborate more effectively.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/auth" className="px-8 py-4 bg-white text-blue-600 rounded-xl hover:bg-gray-100 font-bold transition-all duration-300 shadow-lg hover:shadow-xl">
+              <Link href="/auth" className="px-8 py-4 bg-white text-blue-600 rounded-2xl hover:bg-gray-100 font-bold transition-all duration-300 shadow-lg hover:shadow-xl">
                 Start Free Trial
               </Link>
-              <button className="px-8 py-4 bg-transparent text-white border-2 border-white rounded-xl hover:bg-white/10 font-bold transition-all duration-300">
+              {/* <button className="px-8 py-4 bg-transparent text-white border-2 border-white rounded-xl hover:bg-white/10 font-bold transition-all duration-300">
                 Schedule a Demo
-              </button>
+              </button> */}
             </div>
           </div>
         </div>
@@ -667,7 +667,7 @@ const LandingPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12">
             <div className="lg:col-span-2">
               <div className="flex items-center space-x-3 mb-6">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl flex items-center justify-center">
                   <FaPalette className="text-white text-lg" />
                 </div>
                 <div>

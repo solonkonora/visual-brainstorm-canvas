@@ -60,9 +60,9 @@ const AuthPage = () => {
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <Link href="/landing" className="flex items-center justify-center">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center shadow-lg mx-auto cursor-pointer">
-              <FaPalette className="text-white text-xl" />
-            </div>
+           <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl flex items-center justify-center shadow-lg">
+                           <FaPalette className="text-white text-lg" />
+                         </div>
           </Link>
           <h2 className="mt-6 text-center text-3xl font-bold text-gray-800 dark:text-white">
             {isLogin ? 'Login to your account' : 'Create a new account'}
