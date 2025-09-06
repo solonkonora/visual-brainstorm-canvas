@@ -3,6 +3,7 @@
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
+import { useSearchParams, useRouter } from 'next/navigation';
 import {
   Stage, Layer, Line, Rect, Circle, Text, Transformer
 } from 'react-konva';
@@ -53,7 +54,9 @@ const DrawingBoard: React.FC = () => {
   const [selectionRect, setSelectionRect] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
 
   const [connectTemp, setConnectTemp] = useState<string | null>(null);
-  const [roomId] = useState('demo-room-1');
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const roomId = searchParams.get('room');
   const [canvasSize, setCanvasSize] = useState({ width: 1200, height: 800 });
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   const [saveMessage, setSaveMessage] = useState<string>('');
@@ -66,8 +69,14 @@ const DrawingBoard: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
 
   // Initialize Socket.IO connections and load canvas
-
   useEffect(() => {
+    // Redirect to dashboard if no room ID is provided
+    if (!roomId) {
+      console.error('No room ID provided in URL parameters');
+      router.push('/dashboard');
+      return;
+    }
+
     const userId = 'user-' + Date.now();
     initializeSocket(roomId, userId);
     loadCanvas(roomId);
@@ -75,7 +84,7 @@ const DrawingBoard: React.FC = () => {
     return () => {
       disconnectSocket();
     };
-  }, [roomId, initializeSocket, disconnectSocket, loadCanvas]);
+  }, [roomId, router, initializeSocket, disconnectSocket, loadCanvas]);
 
   // Handle window resize
   useEffect(() => {
@@ -100,7 +109,7 @@ const DrawingBoard: React.FC = () => {
   };
   
   const handleDownload = useCallback(() => {
-    if (!stageRef.current) return;
+    if (!stageRef.current || !roomId) return;
     
     // Export as image
     const uri = stageRef.current.toDataURL({ pixelRatio: 2 });
@@ -396,6 +405,18 @@ const DrawingBoard: React.FC = () => {
 
     }
   };
+
+  // Show loading state while room ID is being determined
+  if (!roomId) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-white dark:bg-gray-900">
+        <div className="text-center">
+          <FaSpinner className="animate-spin text-4xl text-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-gray-300">Loading canvas...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
 
