@@ -36,7 +36,7 @@ export default function Dashboard() {
           return;
         }
 
-        const response = await fetch('http://localhost:3005/users/current_user', {
+        const response = await fetch('http://localhost:3000/users/current_user', {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -64,7 +64,7 @@ export default function Dashboard() {
         return;
       }
 
-      const response = await fetch('http://localhost:3005/api/canvases', {
+      const response = await fetch('http://localhost:3000/api/canvases', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -141,6 +141,12 @@ export default function Dashboard() {
           <a href="#" className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold shadow">
             <Home size={18} /> Home
           </a>
+          <Link href="/rooms" className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300">
+            <UserPlus size={18} /> My Rooms
+          </Link>
+          <Link href="/create-room" className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300">
+            <Gift size={18} /> Create Room
+          </Link>
           <a href="#" className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
             <Star size={18} /> Starred
           </a>
@@ -149,7 +155,7 @@ export default function Dashboard() {
         <div className="p-4 space-y-2">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white rounded-xl px-3 py-2 text-sm font-medium shadow transition"
+            className="w-full flex items-center justify-center gap-2 bg-gray-500 hover:bg-red-600 text-white rounded-xl px-3 py-2 text-sm font-medium shadow transition"
           >
             <LogOut size={16} /> Logout
           </button>
@@ -172,22 +178,22 @@ export default function Dashboard() {
       <main className="flex-1 flex flex-col min-w-0">
         {/* Header */}
         <header className="h-16 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex items-center justify-between px-6 shadow-sm">
-          <div className="text-2xl font-bold text-gray-700 dark:text-gray-200 flex items-center gap-2">
+          <div className="text-2xl font-bold text-gray-700 dark:text-gray-200 flex items-center gap-2 p-8">
             Dashboard
-            <span className="text-xs bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-lg">Free</span>
+            {/* <span className="text-xs bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-lg">Free</span> */}
           </div>
           <div className="flex items-center gap-3">
-            <button 
+            {/* <button 
               className="flex items-center gap-1 text-sm font-medium px-3 py-1 border rounded-lg hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-800 dark:text-gray-200"
               onClick={handleInviteMembers}
             >
               <UserPlus size={16} /> Invite members
-            </button>
-            <button className="bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm px-3 py-1 rounded-lg hover:from-blue-700 hover:to-blue-800 shadow">
+            </button> */}
+            {/* <button className="bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm px-3 py-1 rounded-lg hover:from-blue-700 hover:to-blue-800 shadow">
               Upgrade
-            </button>
-            <Gift size={20} className="text-gray-600 dark:text-gray-300" />
-            <Bell size={20} className="text-gray-600 dark:text-gray-300" />
+            </button> */}
+            {/* <Gift size={20} className="text-gray-600 dark:text-gray-300" />
+            <Bell size={20} className="text-gray-600 dark:text-gray-300" /> */}
             {loading ? (
               <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-700 animate-pulse"></div>
             ) : user ? (
@@ -223,6 +229,39 @@ export default function Dashboard() {
 
         {/* Boards */}
         <div className="px-2 sm:px-6 py-6">
+          {/* Quick Access Section */}
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-200">Quick Access</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <Link
+                href="/create-room"
+                className="bg-gradient-to-br from-blue-500 to-blue-700 text-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 flex flex-col items-center text-center"
+              >
+                <UserPlus size={32} className="mb-3" />
+                <h3 className="font-semibold text-lg mb-2">Create Room</h3>
+                <p className="text-blue-100 text-sm">Start a new collaborative session</p>
+              </Link>
+              
+              <Link
+                href="/rooms"
+                className="bg-gradient-to-br from-green-500 to-green-700 text-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 flex flex-col items-center text-center"
+              >
+                <Home size={32} className="mb-3" />
+                <h3 className="font-semibold text-lg mb-2">My Rooms</h3>
+                <p className="text-green-100 text-sm">View and manage your rooms</p>
+              </Link>
+              
+              <Link
+                href="/dashboard"
+                className="bg-gradient-to-br from-purple-500 to-purple-700 text-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 flex flex-col items-center text-center"
+              >
+                <Star size={32} className="mb-3" />
+                <h3 className="font-semibold text-lg mb-2">Canvas Board</h3>
+                <p className="text-purple-100 text-sm">Access the drawing canvas</p>
+              </Link>
+            </div>
+          </div>
+
           <h2 className="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-200">Boards in this team</h2>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 mb-6 text-sm">
