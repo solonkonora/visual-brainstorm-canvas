@@ -36,7 +36,7 @@ export default function Dashboard() {
           return;
         }
 
-        const response = await fetch('http://localhost:3005/users/current_user', {
+        const response = await fetch('http://localhost:3001/users/current_user', {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -64,7 +64,7 @@ export default function Dashboard() {
         return;
       }
 
-      const response = await fetch('http://localhost:3005/api/canvases', {
+      const response = await fetch('http://localhost:3001/api/canvases', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -89,7 +89,7 @@ export default function Dashboard() {
     try {
       const token = localStorage.getItem('token');
       if (token) {
-        await fetch('http://localhost:3006/users/logout', {
+        await fetch('http://localhost:3001/users/logout', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,

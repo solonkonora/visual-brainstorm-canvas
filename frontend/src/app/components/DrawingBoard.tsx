@@ -402,7 +402,7 @@ const DrawingBoard: React.FC = () => {
     <div className="h-screen flex bg-white dark:bg-gray-900">
       {/* Left Toolbar */}
       <div className="w-16 bg-slate-100 dark:bg-slate-800 flex flex-col items-center py-4 space-y-2">
-        <Link href="/dashboard" className="p-2 bg-slate-200 dark:bg-slate-700 rounded-lg mb-4">
+        <Link href="/general-dashboard" className="p-2 bg-slate-200 dark:bg-slate-700 rounded-lg mb-4">
           <FaArrowLeft />
         </Link>
         
