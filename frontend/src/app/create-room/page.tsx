@@ -55,9 +55,14 @@ const CreateRoomPage = () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
+        setError('No authentication token found. Please log in again.');
         router.push('/auth');
         return;
       }
+
+      console.log('Creating room with data:', formData);
+      console.log('Backend URL:', BACKEND_URL);
+      console.log('Token exists:', !!token);
 
       const response = await fetch(`${BACKEND_URL}/api/rooms`, {
         method: 'POST',
@@ -68,18 +73,33 @@ const CreateRoomPage = () => {
         body: JSON.stringify(formData),
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create room');
+        const contentType = response.headers.get('content-type');
+        console.log('Response content type:', contentType);
+        
+        if (contentType && contentType.includes('application/json')) {
+          const errorData = await response.json();
+          console.log('Error data:', errorData);
+          throw new Error(errorData.message || `Server error: ${response.status} ${response.statusText}`);
+        } else {
+          const textResponse = await response.text();
+          console.log('Non-JSON response:', textResponse);
+          throw new Error(`Server error: ${response.status} ${response.statusText}. Response: ${textResponse}`);
+        }
       }
 
       const data = await response.json();
+      console.log('Success data:', data);
       setCreatedRoom(data.room);
     } catch (err) {
+      console.error('Full error:', err);
       if (err instanceof Error) {
-        setError(err.message);
+        setError(`Error: ${err.message}`);
       } else {
-        setError('An unknown error occurred');
+        setError('An unknown error occurred while creating the room');
       }
     } finally {
       setLoading(false);
@@ -191,7 +211,7 @@ const CreateRoomPage = () => {
                   Enter Room
                 </button>
                 <button
-                  onClick={() => router.push('/dashboard')}
+                  onClick={() => router.push('/general-dashboard')}
                   className="px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200 font-medium"
                 >
                   Go to Dashboard
