@@ -20,8 +20,12 @@ interface UserContextType {
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>({
+    id: 'mock-user-123',
+    name: 'Test User',
+    email: 'test@example.com',
+  });
+  const [loading, setLoading] = useState(false);
 
   const fetchCurrentUser = async () => {
     try {
@@ -86,7 +90,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    fetchCurrentUser();
+    // fetchCurrentUser(); // Temporarily disabled for canvas testing
   }, []);
 
   return (
