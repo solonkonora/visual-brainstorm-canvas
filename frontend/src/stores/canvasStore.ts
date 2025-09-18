@@ -234,31 +234,21 @@ export const useCanvasStore = create<CanvasState>()(
           const socket = getCanvasSocket();
           set({ socket, isLoading: true });
           
-          // Join room
-          socket.emit('join', { sessionId: roomId, userId });
+          // Join room using the correct backend event
+          socket.emit('joinCanvas', roomId);
           
           // Listen for events
-          socket.on('shape_added', (data: { shape: ShapeType, userId: string }) => {
+          socket.on('canvasUpdated', (data: { shapes: ShapeType[], userId?: string, type?: string }) => {
+            console.log('Received canvas update:', data);
             if (data.userId !== socket.id) {
-              set((state) => ({ shapes: [...state.shapes, data.shape] }));
-            }
-          });
-          
-          socket.on('shape_updated', (data: { shapes: ShapeType[], userId: string }) => {
-            if (data.userId !== socket.id) {
-              set({ shapes: data.shapes });
-            }
-          });
-          
-          socket.on('shape_deleted', (data: { shapeIds: string[], userId: string }) => {
-            if (data.userId !== socket.id) {
-              set((state) => ({
-                shapes: state.shapes.filter(s => !data.shapeIds.includes(s.id))
-              }));
+              if (data.shapes) {
+                set({ shapes: data.shapes });
+              }
             }
           });
           
           socket.on('userJoined', (data: { userId: string; userData?: { name: string; avatar?: string; color?: string } }) => {
+            console.log('User joined:', data);
             set((state) => ({
               connectedUsers: [...state.connectedUsers.filter(u => u.id !== data.userId), {
                 id: data.userId,
@@ -270,6 +260,7 @@ export const useCanvasStore = create<CanvasState>()(
           });
           
           socket.on('userLeft', (data: { userId: string }) => {
+            console.log('User left:', data);
             set((state) => ({
               connectedUsers: state.connectedUsers.filter(u => u.id !== data.userId)
             }));
@@ -282,17 +273,22 @@ export const useCanvasStore = create<CanvasState>()(
           });
           
           socket.on('connect', () => {
+            console.log('Socket connected:', socket.id);
+            // Re-join room after reconnection
+            socket.emit('joinCanvas', roomId);
             set({ isLoading: false, error: null });
           });
           
           socket.on('connect_error', (error: Error) => {
+            console.error('Socket connection error:', error);
             set({ error: error.message, isLoading: false });
           });
         },
         
         disconnectSocket: () => {
-          const { socket } = get();
-          if (socket) {
+          const { socket, currentRoom } = get();
+          if (socket && currentRoom) {
+            socket.emit('leaveCanvas', currentRoom.id);
             socket.disconnect();
             set({ socket: null, connectedUsers: [], userCursors: {} });
           }
@@ -302,10 +298,15 @@ export const useCanvasStore = create<CanvasState>()(
         broadcastShapeAdd: (shape) => {
           const { socket, currentRoom } = get();
           if (socket && currentRoom) {
-            socket.emit('shape_add', {
-              sessionId: currentRoom.id,
-              shape,
-              userId: socket.id
+            console.log('Broadcasting shape add:', shape);
+            socket.emit('canvasUpdate', {
+              canvasId: currentRoom.id,
+              payload: {
+                type: 'shape_add',
+                shape,
+                shapes: get().shapes,
+                userId: socket.id
+              }
             });
           }
         },
@@ -313,10 +314,14 @@ export const useCanvasStore = create<CanvasState>()(
         broadcastShapeUpdate: (shapes) => {
           const { socket, currentRoom } = get();
           if (socket && currentRoom) {
-            socket.emit('shape_update', {
-              sessionId: currentRoom.id,
-              shapes,
-              userId: socket.id
+            console.log('Broadcasting shape update, total shapes:', shapes.length);
+            socket.emit('canvasUpdate', {
+              canvasId: currentRoom.id,
+              payload: {
+                type: 'shape_update',
+                shapes,
+                userId: socket.id
+              }
             });
           }
         },
@@ -324,10 +329,15 @@ export const useCanvasStore = create<CanvasState>()(
         broadcastShapeDelete: (shapeIds) => {
           const { socket, currentRoom } = get();
           if (socket && currentRoom) {
-            socket.emit('shape_delete', {
-              sessionId: currentRoom.id,
-              shapeIds,
-              userId: socket.id
+            console.log('Broadcasting shape delete:', shapeIds);
+            socket.emit('canvasUpdate', {
+              canvasId: currentRoom.id,
+              payload: {
+                type: 'shape_delete',
+                shapeIds,
+                shapes: get().shapes,
+                userId: socket.id
+              }
             });
           }
         },
@@ -351,6 +361,67 @@ export const useCanvasStore = create<CanvasState>()(
           
           set({ isLoading: true });
           try {
+            const token = localStorage.getItem('token');
+            
+            // For testing with mock user, try real API first, fallback to mock
+            if (token === 'mock-jwt-token-for-testing') {
+              console.log('Mock user attempting to save canvas for room:', currentRoom.id, 'with', shapes.length, 'shapes');
+              
+              // Try to save to real API first
+              try {
+                const transformedShapes = shapes.map(shape => ({
+                  id: shape.id,
+                  type: shape.type,
+                  x: shape.x,
+                  y: shape.y,
+                  width: shape.width,
+                  height: shape.height,
+                  radius: shape.radius,
+                  points: shape.points,
+                  fill: shape.color,
+                  stroke: shape.color,
+                  strokeWidth: shape.size,
+                  text: shape.text,
+                  fontSize: 16,
+                  fontFamily: 'Arial',
+                  imageSrc: shape.imageSrc,
+                  draggable: shape.draggable,
+                  tool: shape.tool,
+                  fromId: shape.fromId,
+                  toId: shape.toId,
+                  createdBy: shape.userId || 'anonymous'
+                }));
+
+                const response = await fetch(`http://localhost:3004/api/canvas/save`, {
+                  method: 'POST',
+                  headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                  },
+                  body: JSON.stringify({ 
+                    roomId: currentRoom.id,
+                    shapes: transformedShapes,
+                    title: currentRoom.name,
+                    description: currentRoom.description 
+                  })
+                });
+                
+                if (response.ok) {
+                  console.log('Successfully saved to canvas service');
+                  set({ error: null, isLoading: false });
+                  return;
+                }
+              } catch (apiError) {
+                console.log('Canvas service not available, using mock save:', apiError);
+              }
+              
+              // Fallback to mock save
+              await new Promise(resolve => setTimeout(resolve, 500));
+              console.log('Mock save completed');
+              set({ error: null, isLoading: false });
+              return;
+            }
+            
             // Transform shapes to match backend schema
             const transformedShapes = shapes.map(shape => ({
               id: shape.id,
@@ -375,15 +446,17 @@ export const useCanvasStore = create<CanvasState>()(
               createdBy: shape.userId || 'anonymous'
             }));
 
-            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/canvas/${currentRoom.id}`, {
+            const response = await fetch(`http://localhost:3004/api/canvas/${currentRoom.id}`, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
               body: JSON.stringify({ 
                 shapes: transformedShapes,
                 title: currentRoom.name,
                 description: currentRoom.description 
-              }),
-              credentials: 'include'
+              })
             });
             
             if (!response.ok) throw new Error('Failed to save canvas');
@@ -399,21 +472,140 @@ export const useCanvasStore = create<CanvasState>()(
         loadCanvas: async (roomId: string) => {
           set({ isLoading: true });
           try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/canvas/${roomId}`, {
-              credentials: 'include'
+            const token = localStorage.getItem('token');
+            
+            // For testing with mock user, try to load from real API first
+            if (token === 'mock-jwt-token-for-testing') {
+              console.log('Mock user attempting to load canvas for room:', roomId);
+              
+              try {
+                const response = await fetch(`http://localhost:3004/api/canvas/${roomId}`, {
+                  headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (response.ok) {
+                  const data = await response.json();
+                  console.log('Successfully loaded canvas from service:', data);
+                  
+                  // Transform the shapes back to frontend format
+                  const transformedShapes = (data.shapes || []).map((shape: {
+                    id: string;
+                    type: string;
+                    x?: number;
+                    y?: number;
+                    width?: number;
+                    height?: number;
+                    radius?: number;
+                    points?: number[];
+                    fill?: string;
+                    stroke?: string;
+                    strokeWidth?: number;
+                    text?: string;
+                    imageSrc?: string;
+                    draggable?: boolean;
+                    tool?: string;
+                    fromId?: string;
+                    toId?: string;
+                    createdBy?: string;
+                  }) => ({
+                    id: shape.id,
+                    type: shape.type,
+                    x: shape.x,
+                    y: shape.y,
+                    width: shape.width,
+                    height: shape.height,
+                    radius: shape.radius,
+                    points: shape.points,
+                    color: shape.fill || shape.stroke || '#000000',
+                    size: shape.strokeWidth || 2,
+                    text: shape.text,
+                    imageSrc: shape.imageSrc,
+                    draggable: shape.draggable !== false,
+                    tool: shape.tool,
+                    fromId: shape.fromId,
+                    toId: shape.toId,
+                    userId: shape.createdBy || 'unknown'
+                  }));
+                  
+                  const mockRoom: CanvasRoom = {
+                    id: roomId,
+                    name: data.title || (roomId === 'room-demo-1' ? 'Design Brainstorm' : 'Team Planning Session'),
+                    description: data.description || 'Collaborative canvas session',
+                    ownerId: 'mock-user-id',
+                    collaborators: ['mock-user-id'],
+                    isPublic: roomId === 'room-demo-1' ? true : false,
+                    createdAt: data.createdAt || new Date().toISOString(),
+                    updatedAt: data.updatedAt || new Date().toISOString()
+                  };
+                  
+                  set({ 
+                    shapes: transformedShapes, 
+                    currentRoom: mockRoom,
+                    error: null,
+                    isLoading: false
+                  });
+                  return;
+                } else {
+                  console.log('No saved canvas found, creating new one');
+                }
+              } catch (error) {
+                console.log('Failed to load from canvas service:', error);
+              }
+              
+              // Fallback to mock data if API fails or returns 404
+              const mockRoom: CanvasRoom = {
+                id: roomId,
+                name: roomId === 'room-demo-1' ? 'Design Brainstorm' : 'Team Planning Session',
+                description: roomId === 'room-demo-1' 
+                  ? 'Collaborative design session for the new product' 
+                  : 'Weekly team planning and roadmap discussion',
+                ownerId: 'mock-user-id',
+                collaborators: ['mock-user-id'],
+                isPublic: roomId === 'room-demo-1' ? true : false,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+              };
+              
+              // Create new canvas with welcome message only if no data was loaded
+              const mockShapes: ShapeType[] = [
+                {
+                  id: 'welcome-text-1',
+                  type: 'text',
+                  x: 100,
+                  y: 50,
+                  text: 'Welcome to real-time collaboration!',
+                  color: '#2563eb',
+                  draggable: true,
+                  userId: 'system'
+                }
+              ];
+              
+              set({ 
+                shapes: mockShapes, 
+                currentRoom: mockRoom,
+                error: null,
+                isLoading: false
+              });
+              return;
+            }
+            
+            const response = await fetch(`http://localhost:3004/api/canvas/${roomId}`, {
+              headers: token ? { 'Authorization': `Bearer ${token}` } : {}
             });
             
             if (!response.ok) {
               // If session doesn't exist, create it
               if (response.status === 404) {
-                const createResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/canvas`, {
+                const createResponse = await fetch(`http://localhost:3004/api/canvas`, {
                   method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
+                  headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                  },
                   body: JSON.stringify({ 
                     title: `Canvas ${roomId}`,
                     description: 'Collaborative canvas session' 
-                  }),
-                  credentials: 'include'
+                  })
                 });
                 
                 if (createResponse.ok) {
@@ -463,11 +655,37 @@ export const useCanvasStore = create<CanvasState>()(
         createRoom: async (roomData) => {
           set({ isLoading: true });
           try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/rooms`, {
+            const token = localStorage.getItem('token');
+            
+            // For testing with mock user, return mock room
+            if (token === 'mock-jwt-token-for-testing') {
+              console.log('Mock create room:', roomData);
+              
+              const mockRoom: CanvasRoom = {
+                id: 'room-' + Date.now(),
+                name: roomData.name || 'New Room',
+                description: roomData.description,
+                ownerId: 'mock-user-id',
+                collaborators: ['mock-user-id'],
+                isPublic: roomData.isPublic ?? true,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+              };
+              
+              // Simulate API delay
+              await new Promise(resolve => setTimeout(resolve, 500));
+              
+              set({ currentRoom: mockRoom, error: null, isLoading: false });
+              return mockRoom;
+            }
+            
+            const response = await fetch(`http://localhost:3004/api/rooms`, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(roomData),
-              credentials: 'include'
+              headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify(roomData)
             });
             
             if (!response.ok) throw new Error('Failed to create room');

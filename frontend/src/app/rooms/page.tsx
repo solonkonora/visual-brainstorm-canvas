@@ -46,6 +46,41 @@ const RoomsPage = () => {
           return;
         }
 
+        // For testing with mock user, return mock rooms data
+        if (token === 'mock-jwt-token-for-testing') {
+          console.log('Using mock rooms data');
+          
+          // Mock rooms data for testing
+          const mockRooms = [
+            {
+              roomId: 'room-demo-1',
+              name: 'Design Brainstorm',
+              description: 'Collaborative design session for the new product',
+              isPublic: true,
+              currentParticipants: 3,
+              maxParticipants: 10,
+              lastActivity: new Date().toISOString(),
+              createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
+              shareableLink: 'http://localhost:3000/room/room-demo-1'
+            },
+            {
+              roomId: 'room-demo-2',
+              name: 'Team Planning Session',
+              description: 'Weekly team planning and roadmap discussion',
+              isPublic: false,
+              currentParticipants: 1,
+              maxParticipants: 5,
+              lastActivity: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
+              createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 1 week ago
+              shareableLink: 'http://localhost:3000/room/room-demo-2'
+            }
+          ];
+          
+          setRooms(mockRooms);
+          setLoading(false);
+          return;
+        }
+
         const response = await fetch(`${BACKEND_URL}/api/rooms`, {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -78,7 +113,6 @@ const RoomsPage = () => {
       setCopiedLink(roomId);
       setTimeout(() => setCopiedLink(null), 2000);
     } catch {
-      // Handle clipboard error
     }
   };
 

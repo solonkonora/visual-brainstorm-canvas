@@ -20,12 +20,16 @@ interface UserContextType {
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>({
-    id: 'mock-user-123',
-    name: 'Test User',
-    email: 'test@example.com',
-  });
-  const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Remove mock authentication - use real auth service
+  // useEffect(() => {
+  //   const mockToken = 'mock-jwt-token-for-testing';
+  //   if (!localStorage.getItem('token')) {
+  //     localStorage.setItem('token', mockToken);
+  //   }
+  // }, []);
 
   const fetchCurrentUser = async () => {
     try {
@@ -36,7 +40,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
-      const response = await fetch(`${BACKEND_URL}/users/current_user`, {
+      const response = await fetch(`${BACKEND_URL}/auth/me`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -64,7 +68,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       const token = localStorage.getItem('token');
       if (token) {
         // Call the backend logout endpoint
-        await fetch(`${BACKEND_URL}/users/logout`, {
+        await fetch(`${BACKEND_URL}/auth/logout`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -90,7 +94,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    // fetchCurrentUser(); // Temporarily disabled for canvas testing
+    fetchCurrentUser(); // Enable real user fetching
   }, []);
 
   return (

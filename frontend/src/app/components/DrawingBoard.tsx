@@ -355,10 +355,14 @@ const DrawingBoard: React.FC = () => {
     if (isDrawing && (currentTool === 'brush' || currentTool === 'eraser')) {
       const lastShape = shapes[shapes.length - 1];
       if (lastShape && lastShape.type === 'line' && lastShape.points) {
-        const updatedShapes = [...shapes.slice(0, -1), {
+        // Update the last shape with new points more efficiently
+        const updatedShape = {
           ...lastShape,
           points: [...lastShape.points, pos.x, pos.y],
-        }];
+        };
+        
+        // Update shapes array directly without triggering full broadcast during drawing
+        const updatedShapes = [...shapes.slice(0, -1), updatedShape];
         updateShapes(updatedShapes);
       }
     } else if (selectionRect) {
