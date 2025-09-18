@@ -36,14 +36,23 @@ interface Room {
 }
 
 interface RoomPageProps {
-  params: {
+  params: Promise<{
     roomId: string;
-  };
+  }>;
 }
 
 const RoomPage = ({ params }: RoomPageProps) => {
   const router = useRouter();
-  const { roomId } = params;
+  const [roomId, setRoomId] = React.useState<string | null>(null);
+
+  // Unwrap the params Promise as required by Next.js 15
+  React.useEffect(() => {
+    const unwrapParams = async () => {
+      const unwrappedParams = await params;
+      setRoomId(unwrappedParams.roomId);
+    };
+    unwrapParams();
+  }, [params]);
   const [room, setRoom] = useState<Room | null>(null);
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
@@ -55,9 +64,51 @@ const RoomPage = ({ params }: RoomPageProps) => {
   const [showJoinForm, setShowJoinForm] = useState(false);
 
   useEffect(() => {
+    if (!roomId) return; // Wait for roomId to be available
+    
     const fetchRoomDetails = async () => {
       try {
-        const response = await fetch(`${BACKEND_URL}/api/rooms/${roomId}`);
+        const token = localStorage.getItem('token');
+        
+        // For testing with mock user, return mock room data
+        if (token === 'mock-jwt-token-for-testing') {
+          console.log('Using mock room data for roomId:', roomId);
+          
+          // Mock room data for testing
+          const mockRoom: Room = {
+            roomId,
+            name: roomId === 'room-demo-1' ? 'Design Brainstorm' : 'Team Planning Session',
+            description: roomId === 'room-demo-1' 
+              ? 'Collaborative design session for the new product' 
+              : 'Weekly team planning and roadmap discussion',
+            isPublic: roomId === 'room-demo-1' ? true : false,
+            maxParticipants: roomId === 'room-demo-1' ? 10 : 5,
+            currentParticipants: roomId === 'room-demo-1' ? 3 : 1,
+            requiresPassword: roomId === 'room-demo-1' ? false : true,
+            shareableLink: `http://localhost:3000/room/${roomId}`,
+            status: 'active',
+            participants: [
+              {
+                name: 'Mock User',
+                joinedAt: new Date().toISOString(),
+                isActive: true
+              }
+            ],
+            settings: {
+              allowGuests: true,
+              allowDrawing: true,
+              allowChat: true
+            }
+          };
+          
+          setRoom(mockRoom);
+          setLoading(false);
+          return;
+        }
+
+        const response = await fetch(`${BACKEND_URL}/api/rooms/${roomId}`, {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        });
         
         if (!response.ok) {
           if (response.status === 404) {
@@ -87,6 +138,16 @@ const RoomPage = ({ params }: RoomPageProps) => {
 
     try {
       const token = localStorage.getItem('token');
+      
+      // For testing with mock user, skip API call and redirect directly
+      if (token === 'mock-jwt-token-for-testing') {
+        console.log('Mock user joining room:', roomId);
+        // Store room data and redirect to canvas
+        sessionStorage.setItem('currentRoom', JSON.stringify(room));
+        router.push(`/dashboard?room=${roomId}`);
+        return;
+      }
+      
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
       };
@@ -114,7 +175,7 @@ const RoomPage = ({ params }: RoomPageProps) => {
       
       // Store room data and redirect to canvas
       sessionStorage.setItem('currentRoom', JSON.stringify(data.room));
-      router.push(`/canvas?room=${roomId}`);
+      router.push(`/dashboard?room=${roomId}`);
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
@@ -134,7 +195,7 @@ const RoomPage = ({ params }: RoomPageProps) => {
     }));
   };
 
-  if (loading) {
+  if (!roomId || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
         <div className="text-center">

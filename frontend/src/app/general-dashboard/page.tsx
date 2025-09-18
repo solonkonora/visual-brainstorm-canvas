@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Home, Compass, Star, Bell, Gift, UserPlus, Menu, LogOut } from "lucide-react";
+import { Home, Compass, Star, Gift, UserPlus, Menu, LogOut } from "lucide-react";
 import Link from 'next/link';
 
 export default function Dashboard() {
@@ -160,9 +160,6 @@ export default function Dashboard() {
             <LogOut size={16} /> Logout
           </button>
 
-          {/* <Link href="/dashboard" className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl px-3 py-2 text-sm font-medium shadow hover:from-blue-700 hover:to-blue-800 transition block text-center">
-            + New Space
-          </Link> */}
         </div>
       </aside>
 
