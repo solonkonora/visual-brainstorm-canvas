@@ -15,14 +15,36 @@ const AuthPage = () => {
   const [lastName, setLastName] = useState('');
   const [error, setError] = useState<string | null>(null);
 
+  // Debug logging on component mount
+  React.useEffect(() => {
+    console.log('🔧 DEBUG: AuthPage component mounted');
+    console.log('🔧 DEBUG: BACKEND_URL:', BACKEND_URL);
+    console.log('🔧 DEBUG: Environment variables:', {
+      NEXT_PUBLIC_BACKEND_URL: process.env.NEXT_PUBLIC_BACKEND_URL,
+      NODE_ENV: process.env.NODE_ENV,
+    });
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
     try {
+      // Debug logging
+      console.log('🔍 DEBUG: BACKEND_URL from env:', BACKEND_URL);
+      console.log('🔍 DEBUG: process.env.NEXT_PUBLIC_BACKEND_URL:', process.env.NEXT_PUBLIC_BACKEND_URL);
+      console.log('🔍 DEBUG: isLogin:', isLogin);
+      
       const url = isLogin
         ? `${BACKEND_URL}/auth/login`
         : `${BACKEND_URL}/auth/signup`;
+      
+      console.log('🚀 DEBUG: Making request to URL:', url);
+      console.log('🚀 DEBUG: Request payload:', {
+        email,
+        password,
+        ...(isLogin ? {} : { firstName, lastName }),
+      });
 
       const response = await fetch(url, {
         method: 'POST',
@@ -34,23 +56,37 @@ const AuthPage = () => {
         }),
       });
 
+      console.log('✅ DEBUG: Response status:', response.status);
+      console.log('✅ DEBUG: Response ok:', response.ok);
+
       if (!response.ok) {
+        console.error('❌ DEBUG: Response not ok, trying to parse error');
         const errorData = await response.json();
+        console.error('❌ DEBUG: Error data:', errorData);
         throw new Error(errorData.message || 'Authentication failed');
       }
 
       const data = await response.json();
+      console.log('✅ DEBUG: Success response data:', data);
       
       // Store the token in localStorage
       if (data.token) {
         localStorage.setItem('token', data.token);
+        console.log('✅ DEBUG: Token stored in localStorage');
+      } else {
+        console.warn('⚠️ DEBUG: No token in response data');
       }
 
+      console.log('🎯 DEBUG: Redirecting to general-dashboard');
       router.push('/general-dashboard');
     } catch (err) {
+      console.error('💥 DEBUG: Catch block error:', err);
       if (err instanceof Error) {
+        console.error('💥 DEBUG: Error message:', err.message);
+        console.error('💥 DEBUG: Error stack:', err.stack);
         setError(err.message);
       } else {
+        console.error('💥 DEBUG: Unknown error type:', typeof err);
         setError('An unknown error occurred');
       }
     }
