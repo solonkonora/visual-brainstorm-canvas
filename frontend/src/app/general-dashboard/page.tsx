@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Home, Compass, Star, Gift, UserPlus, Menu, LogOut } from "lucide-react";
 import Link from 'next/link';
+import { useUser } from '../context/user-context';
 
 export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, loading, logout } = useUser();
   
   const templates = [
     { name: "Blank board", color: "from-blue-500 to-blue-700" },
@@ -25,36 +25,6 @@ export default function Dashboard() {
     { name: "My First Board", modified: "Today", owner: "Davy Kennang" },
     { name: "Untitled", modified: "Today", owner: "Davy Kennang" },
   ];
-
-  // Fetch current user information
-  useEffect(() => {
-    const fetchCurrentUser = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          setLoading(false);
-          return;
-        }
-
-        const response = await fetch('http://localhost:3000/users/current_user', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-
-        if (response.ok) {
-          const userData = await response.json();
-          setUser(userData);
-        }
-      } catch (error) {
-        console.error('Error fetching current user:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCurrentUser();
-  }, []);
 
   const handleInviteMembers = async () => {
     try {
@@ -85,22 +55,9 @@ export default function Dashboard() {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      if (token) {
-        await fetch('http://localhost:3006/users/logout', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-      }
-      localStorage.removeItem('token');
-      window.location.href = "/auth"; // Redirect to login page
-    } catch (error) {
-      console.error('Error logging out:', error);
-    }
+  const handleLogout = () => {
+    console.log('🚪 DEBUG: Dashboard logout button clicked');
+    logout(); // Use the logout function from UserContext
   };
 
   return (
