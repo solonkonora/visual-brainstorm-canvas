@@ -11,7 +11,6 @@ import {
   FaCheck,
   FaArrowLeft
 } from 'react-icons/fa';
-import { BACKEND_URL } from '@/lib/env';
 
 interface CreatedRoom {
   roomId: string;
@@ -66,7 +65,7 @@ const CreateRoomPage = () => {
         
         // Simulate successful room creation
         const mockRoomId = `room-${Date.now()}`;
-        setSuccessMessage(`Room "${formData.name}" created successfully! Room ID: ${mockRoomId}`);
+        console.log(`Room "${formData.name}" created successfully! Room ID: ${mockRoomId}`);
         
         // Reset form
         setFormData({
@@ -81,10 +80,10 @@ const CreateRoomPage = () => {
       }
 
       console.log('Creating room with data:', formData);
-      console.log('Backend URL:', BACKEND_URL);
+      console.log('Canvas Service URL:', 'http://localhost:3005');
       console.log('Token exists:', !!token);
 
-      const response = await fetch(`${BACKEND_URL}/api/rooms`, {
+      const response = await fetch(`http://localhost:3005/api/rooms`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -381,15 +380,4 @@ const CreateRoomPage = () => {
 };
 
 export default CreateRoomPage;
-function setSuccessMessage(message: string) {
-  // This function should set a success message, but in the current code,
-  // there is no state for a success message. 
-  // To implement this, you could add a state for successMessage and set it here.
-  // However, in the current context, the success message is not used after calling this function.
-  // For now, you can remove the call to setSuccessMessage, or if you want to keep it for future use,
-  // you can implement it as a no-op:
-
-  // Example (no-op):
-  // Do nothing for now, as success message is not displayed anywhere.
-}
 

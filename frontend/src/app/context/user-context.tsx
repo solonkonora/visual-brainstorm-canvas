@@ -32,13 +32,10 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   // }, []);
 
   const fetchCurrentUser = async () => {
-    console.log('👤 DEBUG: fetchCurrentUser called');
     try {
       const token = localStorage.getItem('token');
-      console.log('👤 DEBUG: Token from localStorage:', token ? 'Token exists' : 'No token found');
       
       if (!token) {
-        console.log('👤 DEBUG: No token, setting user to null');
         setUser(null);
         setLoading(false);
         return;
@@ -46,10 +43,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
       // Call user service for current user info
       const userServiceUrl = 'http://localhost:3004/users/me';
-      console.log('👤 DEBUG: Making request to user service:', userServiceUrl);
-      console.log('👤 DEBUG: Request headers:', {
-        'Authorization': `Bearer ${token.substring(0, 20)}...`,
-      });
 
       const response = await fetch(userServiceUrl, {
         headers: {
@@ -57,27 +50,19 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         },
       });
       
-      console.log('👤 DEBUG: User service response status:', response.status);
-      console.log('👤 DEBUG: User service response ok:', response.ok);
-      
       if (response.ok) {
         const userData = await response.json();
-        console.log('👤 DEBUG: User data received:', userData);
         setUser(userData);
       } else {
         // If token is invalid, remove it
-        console.warn('👤 DEBUG: Invalid response, removing token');
-        const errorText = await response.text();
-        console.error('👤 DEBUG: Response error:', errorText);
         localStorage.removeItem('token');
         setUser(null);
       }
     } catch (error) {
-      console.error('👤 DEBUG: Error fetching current user:', error);
+      console.error('Error fetching current user:', error);
       localStorage.removeItem('token');
       setUser(null);
     } finally {
-      console.log('👤 DEBUG: Setting loading to false');
       setLoading(false);
     }
   };
@@ -113,7 +98,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    console.log('👤 DEBUG: UserProvider useEffect triggered - starting to fetch current user');
     fetchCurrentUser(); // Enable real user fetching
   }, []);
 
