@@ -392,7 +392,7 @@ export const useCanvasStore = create<CanvasState>()(
                   createdBy: shape.userId || 'anonymous'
                 }));
 
-                const response = await fetch(`http://localhost:3004/api/canvas/save`, {
+                const response = await fetch(`http://localhost:3005/api/canvas/save`, {
                   method: 'POST',
                   headers: { 
                     'Content-Type': 'application/json',
@@ -432,7 +432,7 @@ export const useCanvasStore = create<CanvasState>()(
               height: shape.height,
               radius: shape.radius,
               points: shape.points,
-              fill: shape.color, // Map color to fill
+              fill: shape.color,
               stroke: shape.color,
               strokeWidth: shape.size,
               text: shape.text,
@@ -446,7 +446,7 @@ export const useCanvasStore = create<CanvasState>()(
               createdBy: shape.userId || 'anonymous'
             }));
 
-            const response = await fetch(`http://localhost:3004/api/canvas/${currentRoom.id}`, {
+            const response = await fetch(`http://localhost:3005/api/canvas/${currentRoom.id}`, {
               method: 'POST',
               headers: { 
                 'Content-Type': 'application/json',
@@ -474,12 +474,12 @@ export const useCanvasStore = create<CanvasState>()(
           try {
             const token = localStorage.getItem('token');
             
-            // For testing with mock user, try to load from real API first
+            // for testing with mock user, try to load from real API first
             if (token === 'mock-jwt-token-for-testing') {
               console.log('Mock user attempting to load canvas for room:', roomId);
               
               try {
-                const response = await fetch(`http://localhost:3004/api/canvas/${roomId}`, {
+                const response = await fetch(`http://localhost:3005/api/canvas/${roomId}`, {
                   headers: { 'Authorization': `Bearer ${token}` }
                 });
                 
@@ -487,7 +487,7 @@ export const useCanvasStore = create<CanvasState>()(
                   const data = await response.json();
                   console.log('Successfully loaded canvas from service:', data);
                   
-                  // Transform the shapes back to frontend format
+                  // transform the shapes back to frontend format
                   const transformedShapes = (data.shapes || []).map((shape: {
                     id: string;
                     type: string;
@@ -552,7 +552,7 @@ export const useCanvasStore = create<CanvasState>()(
                 console.log('Failed to load from canvas service:', error);
               }
               
-              // Fallback to mock data if API fails or returns 404
+              // fallback to mock data if API fails or returns 404
               const mockRoom: CanvasRoom = {
                 id: roomId,
                 name: roomId === 'room-demo-1' ? 'Design Brainstorm' : 'Team Planning Session',
@@ -566,7 +566,7 @@ export const useCanvasStore = create<CanvasState>()(
                 updatedAt: new Date().toISOString()
               };
               
-              // Create new canvas with welcome message only if no data was loaded
+              // create new canvas with welcome message only if no data was loaded
               const mockShapes: ShapeType[] = [
                 {
                   id: 'welcome-text-1',
@@ -589,14 +589,14 @@ export const useCanvasStore = create<CanvasState>()(
               return;
             }
             
-            const response = await fetch(`http://localhost:3004/api/canvas/${roomId}`, {
+            const response = await fetch(`http://localhost:3005/api/canvas/${roomId}`, {
               headers: token ? { 'Authorization': `Bearer ${token}` } : {}
             });
             
             if (!response.ok) {
-              // If session doesn't exist, create it
+              // if session doesn't exist, create it
               if (response.status === 404) {
-                const createResponse = await fetch(`http://localhost:3004/api/canvas`, {
+                const createResponse = await fetch(`http://localhost:3005/api/canvas`, {
                   method: 'POST',
                   headers: { 
                     'Content-Type': 'application/json',
@@ -672,14 +672,14 @@ export const useCanvasStore = create<CanvasState>()(
                 updatedAt: new Date().toISOString()
               };
               
-              // Simulate API delay
+              // simulate API delay
               await new Promise(resolve => setTimeout(resolve, 500));
               
               set({ currentRoom: mockRoom, error: null, isLoading: false });
               return mockRoom;
             }
             
-            const response = await fetch(`http://localhost:3004/api/rooms`, {
+            const response = await fetch(`http://localhost:3005/api/rooms`, {
               method: 'POST',
               headers: { 
                 'Content-Type': 'application/json',

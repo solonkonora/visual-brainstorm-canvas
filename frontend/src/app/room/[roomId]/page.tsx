@@ -11,7 +11,6 @@ import {
   FaSpinner,
   FaExclamationTriangle
 } from 'react-icons/fa';
-import { BACKEND_URL } from '@/lib/env';
 
 interface Room {
   roomId: string;
@@ -20,19 +19,9 @@ interface Room {
   isPublic: boolean;
   maxParticipants: number;
   currentParticipants: number;
-  requiresPassword: boolean;
-  shareableLink: string;
-  status: string;
-  participants?: Array<{
-    name: string;
-    joinedAt: string;
-    isActive: boolean;
-  }>;
-  settings: {
-    allowGuests: boolean;
-    allowDrawing: boolean;
-    allowChat: boolean;
-  };
+  participants?: string[]; // Array of user IDs
+  createdBy: string;
+  createdAt?: string;
 }
 
 interface RoomPageProps {
@@ -84,21 +73,9 @@ const RoomPage = ({ params }: RoomPageProps) => {
             isPublic: roomId === 'room-demo-1' ? true : false,
             maxParticipants: roomId === 'room-demo-1' ? 10 : 5,
             currentParticipants: roomId === 'room-demo-1' ? 3 : 1,
-            requiresPassword: roomId === 'room-demo-1' ? false : true,
-            shareableLink: `http://localhost:3000/room/${roomId}`,
-            status: 'active',
-            participants: [
-              {
-                name: 'Mock User',
-                joinedAt: new Date().toISOString(),
-                isActive: true
-              }
-            ],
-            settings: {
-              allowGuests: true,
-              allowDrawing: true,
-              allowChat: true
-            }
+            participants: ['mock-user-1'],
+            createdBy: 'mock-user-1',
+            createdAt: new Date().toISOString(),
           };
           
           setRoom(mockRoom);
@@ -106,7 +83,7 @@ const RoomPage = ({ params }: RoomPageProps) => {
           return;
         }
 
-        const response = await fetch(`${BACKEND_URL}/api/rooms/${roomId}`, {
+        const response = await fetch(`http://localhost:3005/api/rooms/${roomId}`, {
           headers: token ? { 'Authorization': `Bearer ${token}` } : {},
         });
         
@@ -120,7 +97,7 @@ const RoomPage = ({ params }: RoomPageProps) => {
         }
 
         const data = await response.json();
-        setRoom(data.room);
+        setRoom(data);  // The API returns room data directly, not nested under 'room'
       } catch {
         setError('Failed to connect to server');
       } finally {
@@ -144,7 +121,7 @@ const RoomPage = ({ params }: RoomPageProps) => {
         console.log('Mock user joining room:', roomId);
         // Store room data and redirect to canvas
         sessionStorage.setItem('currentRoom', JSON.stringify(room));
-        router.push(`/dashboard?room=${roomId}`);
+        router.push(`/canvas?room=${roomId}`);
         return;
       }
       
@@ -156,12 +133,10 @@ const RoomPage = ({ params }: RoomPageProps) => {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(`${BACKEND_URL}/api/rooms/join`, {
+      const response = await fetch(`http://localhost:3005/api/rooms/${roomId}/join`, {
         method: 'POST',
         headers,
         body: JSON.stringify({
-          roomId,
-          name: joinForm.name,
           password: joinForm.password || undefined,
         }),
       });
@@ -174,8 +149,8 @@ const RoomPage = ({ params }: RoomPageProps) => {
       const data = await response.json();
       
       // Store room data and redirect to canvas
-      sessionStorage.setItem('currentRoom', JSON.stringify(data.room));
-      router.push(`/dashboard?room=${roomId}`);
+      sessionStorage.setItem('currentRoom', JSON.stringify(data));
+      router.push(`/canvas?room=${roomId}`);
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
@@ -266,7 +241,7 @@ const RoomPage = ({ params }: RoomPageProps) => {
 
               <div className="text-center">
                 <div className="flex items-center justify-center space-x-2 mb-2">
-                  {room.requiresPassword ? (
+                  {!room.isPublic ? (
                     <>
                       <FaLock className="text-red-500" />
                       <span className="text-red-600 dark:text-red-400 font-medium">Private</span>
@@ -283,12 +258,8 @@ const RoomPage = ({ params }: RoomPageProps) => {
 
               <div className="text-center">
                 <div className="mb-2">
-                  <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
-                    room.status === 'active' 
-                      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                      : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
-                  }`}>
-                    {room.status === 'active' ? 'Active' : 'Inactive'}
+                  <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                    Active
                   </span>
                 </div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Status</p>
@@ -314,7 +285,7 @@ const RoomPage = ({ params }: RoomPageProps) => {
               </p>
               <button
                 onClick={() => setShowJoinForm(true)}
-                disabled={room.currentParticipants >= room.maxParticipants || room.status !== 'active'}
+                disabled={room.currentParticipants >= room.maxParticipants}
                 className="px-8 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 mx-auto"
               >
                 <FaSignInAlt />
@@ -350,7 +321,7 @@ const RoomPage = ({ params }: RoomPageProps) => {
                   />
                 </div>
 
-                {room.requiresPassword && (
+                {!room.isPublic && (
                   <div>
                     <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Room Password *
