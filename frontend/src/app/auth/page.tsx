@@ -30,7 +30,7 @@ const AuthPage = () => {
   } = useForm<FormValues>();
 
   const onSubmit = async (values: FormValues) => {
-    console.log("🚀 onSubmit triggered with values:", values);
+    console.log("onSubmit triggered with values:", values);
     setError(null);
 
     try {
@@ -40,10 +40,10 @@ const AuthPage = () => {
         ? `${AUTH_SERVICE_URL}/auth/login`
         : `${AUTH_SERVICE_URL}/auth/signup`;
 
-      console.log("🔍 DEBUG: Submitting form with:", values);
+      console.log("DEBUG: Submitting form with:", values);
 
-      console.log("🌍 Fetching URL:", url);
-      console.log("📦 Payload:", {
+      console.log("Fetching URL:", url);
+      console.log("Payload:", {
         email: values.email,
         password: values.password,
         ...(isLogin
