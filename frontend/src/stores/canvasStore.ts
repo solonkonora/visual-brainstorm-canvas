@@ -392,7 +392,7 @@ export const useCanvasStore = create<CanvasState>()(
                   createdBy: shape.userId || 'anonymous'
                 }));
 
-                const response = await fetch(`http://localhost:3005/api/canvas/save`, {
+                const response = await fetch(`http://localhost:3005/canvas`, {
                   method: 'POST',
                   headers: { 
                     'Content-Type': 'application/json',
@@ -446,7 +446,7 @@ export const useCanvasStore = create<CanvasState>()(
               createdBy: shape.userId || 'anonymous'
             }));
 
-            const response = await fetch(`http://localhost:3005/api/canvas/${currentRoom.id}`, {
+            const response = await fetch(`http://localhost:3005/canvas/${currentRoom.id}`, {
               method: 'POST',
               headers: { 
                 'Content-Type': 'application/json',
@@ -479,7 +479,7 @@ export const useCanvasStore = create<CanvasState>()(
               console.log('Mock user attempting to load canvas for room:', roomId);
               
               try {
-                const response = await fetch(`http://localhost:3005/api/canvas/${roomId}`, {
+                const response = await fetch(`http://localhost:3005/canvas/${roomId}`, {
                   headers: { 'Authorization': `Bearer ${token}` }
                 });
                 
@@ -589,41 +589,51 @@ export const useCanvasStore = create<CanvasState>()(
               return;
             }
             
-            const response = await fetch(`http://localhost:3005/api/canvas/${roomId}`, {
+            const response = await fetch(`http://localhost:3005/canvas/${roomId}`, {
               headers: token ? { 'Authorization': `Bearer ${token}` } : {}
             });
             
             if (!response.ok) {
               // if session doesn't exist, create it
               if (response.status === 404) {
-                const createResponse = await fetch(`http://localhost:3005/api/canvas`, {
+                const createResponse = await fetch(`http://localhost:3005/canvas`, {
                   method: 'POST',
                   headers: { 
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                   },
                   body: JSON.stringify({ 
-                    title: `Canvas ${roomId}`,
-                    description: 'Collaborative canvas session' 
+                    roomId,
+                    name: `Canvas ${roomId}`
                   })
                 });
                 
                 if (createResponse.ok) {
                   const createData = await createResponse.json();
+                  // Use canvasId for subsequent fetches
                   set({ 
                     shapes: [], 
                     currentRoom: {
-                      id: createData.sessionId,
-                      name: createData.session.title,
-                      description: createData.session.description,
-                      ownerId: createData.session.ownerId,
+                      id: createData.canvasId,
+                      name: createData.name,
+                      description: createData.description,
+                      ownerId: createData.ownerId,
                       collaborators: [],
-                      isPublic: !createData.session.isPrivate,
-                      createdAt: createData.session.createdAt,
-                      updatedAt: createData.session.createdAt
+                      isPublic: true,
+                      createdAt: createData.createdAt,
+                      updatedAt: createData.createdAt
                     },
                     error: null 
                   });
+                  // Immediately fetch the new canvas by canvasId
+                  const newCanvasId = createData.canvasId;
+                  const fetchResponse = await fetch(`http://localhost:3005/canvas/${newCanvasId}`, {
+                    headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+                  });
+                  if (fetchResponse.ok) {
+                    const data = await fetchResponse.json();
+                    set({ shapes: data.shapes || [] });
+                  }
                   return;
                 }
               }

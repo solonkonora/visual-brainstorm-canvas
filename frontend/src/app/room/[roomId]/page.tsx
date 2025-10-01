@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useUser } from '@/app/context/user-context';
 import { useRouter } from 'next/navigation';
 import { 
   FaPalette, 
@@ -33,6 +34,16 @@ interface RoomPageProps {
 const RoomPage = ({ params }: RoomPageProps) => {
   const router = useRouter();
   const [roomId, setRoomId] = React.useState<string | null>(null);
+  // Get current user from context (if UserProvider wraps the app)
+  let user: { id: string; name: string; email: string } | null = null;
+  try {
+    // Prefer top-level hook usage; if not in a React tree wrapped by UserProvider,
+    // this will throw and we fall back to null.
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    user = useUser().user;
+  } catch {
+    user = null;
+  }
 
   // Unwrap the params Promise as required by Next.js 15
   React.useEffect(() => {
@@ -215,6 +226,12 @@ const RoomPage = ({ params }: RoomPageProps) => {
           <h1 className="text-4xl font-bold text-gray-800 dark:text-white mb-2">
             {room.name}
           </h1>
+          {/* Show current logged in user's name when available */}
+          {user ? (
+            <p className="text-sm text-gray-700 dark:text-gray-300">Hello, {user.name}</p>
+          ) : (
+            <p className="text-sm text-gray-600 dark:text-gray-400">You are not signed in. <a href="/auth" className="text-blue-600">Sign in</a></p>
+          )}
           {room.description && (
             <p className="text-lg text-gray-600 dark:text-gray-300">
               {room.description}

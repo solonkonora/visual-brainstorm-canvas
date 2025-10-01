@@ -1,7 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { BACKEND_URL } from '@/lib/env';
+// import { BACKEND_URL } from '@/lib/env';
+import { USER_SERVICE_URL } from '@/lib/env';
 
 interface User {
   id: string;
@@ -23,14 +24,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Remove mock authentication - use real auth service
-  // useEffect(() => {
-  //   const mockToken = 'mock-jwt-token-for-testing';
-  //   if (!localStorage.getItem('token')) {
-  //     localStorage.setItem('token', mockToken);
-  //   }
-  // }, []);
-
   const fetchCurrentUser = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -41,20 +34,25 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
-      // Call user service for current user info
-      const userServiceUrl = 'http://localhost:3004/users/me';
+  // Call gateway for current user info (gateway will proxy to user service) coming back to this
+  // const response = await fetch(`${BACKEND_URL}/users/me`, {
+    const response = await fetch(`${USER_SERVICE_URL}/users/me`, {
 
-      const response = await fetch(userServiceUrl, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
-      
-      if (response.ok) {
-        const userData = await response.json();
-        setUser(userData);
+
+      console.debug('fetchCurrentUser status', response.status);
+      const body = await response.json().catch(() => null);
+      console.debug('fetchCurrentUser body', body);
+
+      if (response.ok && body) {
+        // Accept multiple shapes: { user: {...} } | { data: { user: {...} } } | {...user}
+        const userPayload = body.user || (body.data && body.data.user) || body;
+        setUser(userPayload);
       } else {
-        // If token is invalid, remove it
+        // If token is invalid or response not OK, remove it
         localStorage.removeItem('token');
         setUser(null);
       }
@@ -71,8 +69,8 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     try {
       const token = localStorage.getItem('token');
       if (token) {
-        // Call the backend logout endpoint
-        await fetch(`${BACKEND_URL}/auth/logout`, {
+  // Call the backend logout endpoint
+  await fetch(`${USER_SERVICE_URL}/auth/logout`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -90,7 +88,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       window.location.href = '/auth';
     } catch (error) {
       console.error('Error during logout:', error);
-      // Even if there's an error, we still want to clear the local state
       localStorage.removeItem('token');
       setUser(null);
       window.location.href = '/auth';
@@ -98,7 +95,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    fetchCurrentUser(); // Enable real user fetching
+    fetchCurrentUser(); 
   }, []);
 
   return (
