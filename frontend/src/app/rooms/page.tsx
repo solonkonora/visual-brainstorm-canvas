@@ -7,7 +7,6 @@ import {
   FaPalette, 
   FaPlus, 
   FaUsers, 
-  FaLock, 
   FaUnlock,
   FaCopy,
   FaCheck,
@@ -16,18 +15,26 @@ import {
   FaSpinner,
   FaCalendarAlt
 } from 'react-icons/fa';
-import { CANVAS_SERVICE_URL } from '@/lib/env';
+
+interface Drawing {
+  id: string;
+  type: 'line' | 'circle' | 'rectangle';
+  coordinates: Record<string, unknown>;
+  style?: Record<string, unknown>;
+  createdBy: string;
+  createdAt: Date;
+}
 
 interface Room {
-  roomId: string;
+  _id: string;
   name: string;
-  description?: string;
-  isPublic: boolean;
-  currentParticipants: number;
-  maxParticipants: number;
-  lastActivity: string;
-  createdAt: string;
-  shareableLink: string;
+  ownerId: string;
+  shareableLinkKey: string;
+  drawings: Drawing[];
+  participants: string[];
+  createdAt: Date;
+  lastModifiedAt: Date;
+  asOf?: number;
 }
 
 const RoomsPage = () => {
@@ -46,7 +53,7 @@ const RoomsPage = () => {
           return;
         }
 
-        const response = await fetch(`${CANVAS_SERVICE_URL}/api/rooms`, {
+        const response = await fetch(`http://localhost:3008/rooms`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -61,7 +68,7 @@ const RoomsPage = () => {
         }
 
         const data = await response.json();
-        setRooms(data.rooms);
+        setRooms(data); // Backend returns array of rooms directly
       } catch {
         setError('Failed to load rooms');
       } finally {
@@ -166,7 +173,7 @@ const RoomsPage = () => {
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {rooms.map((room) => (
               <div
-                key={room.roomId}
+                key={room._id}
                 className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl transition-all duration-200"
               >
                 {/* Room Header */}
@@ -176,22 +183,18 @@ const RoomsPage = () => {
                       {room.name}
                     </h3>
                     <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-                      <span className="font-mono">{room.roomId}</span>
-                      {room.isPublic ? (
-                        <FaUnlock className="text-green-500" />
-                      ) : (
-                        <FaLock className="text-red-500" />
-                      )}
+                      <span className="font-mono">{room._id}</span>
+                      <FaUnlock className="text-blue-500" />
                     </div>
                   </div>
                 </div>
 
-                {/* Room Description */}
-                {room.description && (
-                  <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-2">
-                    {room.description}
+                {/* Room Info */}
+                <div className="mb-4">
+                  <p className="text-gray-600 dark:text-gray-300 text-sm">
+                    Owner: {room.ownerId}
                   </p>
-                )}
+                </div>
 
                 {/* Room Stats */}
                 <div className="grid grid-cols-2 gap-4 mb-6">
@@ -199,9 +202,8 @@ const RoomsPage = () => {
                     <div className="flex items-center justify-center space-x-1 mb-1">
                       <FaUsers className="text-blue-600 text-sm" />
                       <span className="font-bold text-gray-800 dark:text-white">
-                        {room.currentParticipants}
+                        {room.participants.length}
                       </span>
-                      <span className="text-gray-500">/ {room.maxParticipants}</span>
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">Participants</p>
                   </div>
@@ -210,17 +212,17 @@ const RoomsPage = () => {
                     <div className="flex items-center justify-center space-x-1 mb-1">
                       <FaCalendarAlt className="text-green-600 text-sm" />
                       <span className="font-bold text-gray-800 dark:text-white text-xs">
-                        {formatRelativeTime(room.lastActivity)}
+                        {formatRelativeTime(room.lastModifiedAt.toString())}
                       </span>
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Last Active</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Last Modified</p>
                   </div>
                 </div>
 
                 {/* Room Actions */}
                 <div className="space-y-3">
                   <button
-                    onClick={() => router.push(`/room/${room.roomId}`)}
+                    onClick={() => router.push(`/room/${room._id}`)}
                     className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 font-medium"
                   >
                     Enter Room
@@ -228,14 +230,14 @@ const RoomsPage = () => {
 
                   <div className="flex space-x-2">
                     <button
-                      onClick={() => copyToClipboard(room.shareableLink, room.roomId)}
+                      onClick={() => copyToClipboard(`${window.location.origin}/room/${room._id}?key=${room.shareableLinkKey}`, room._id)}
                       className={`flex-1 px-3 py-2 rounded-lg font-medium transition-all duration-200 text-sm flex items-center justify-center space-x-1 ${
-                        copiedLink === room.roomId
+                        copiedLink === room._id
                           ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
                           : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                       }`}
                     >
-                      {copiedLink === room.roomId ? (
+                      {copiedLink === room._id ? (
                         <>
                           <FaCheck className="text-xs" />
                           <span>Copied!</span>
@@ -267,7 +269,7 @@ const RoomsPage = () => {
                 {/* Room Metadata */}
                 <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Created {formatDate(room.createdAt)}
+                    Created {formatDate(room.createdAt.toString())}
                   </p>
                 </div>
               </div>
@@ -290,15 +292,15 @@ const RoomsPage = () => {
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-green-600 mb-2">
-                  {rooms.reduce((acc, room) => acc + room.currentParticipants, 0)}
+                  {rooms.reduce((acc, room) => acc + room.participants.length, 0)}
                 </div>
-                <p className="text-gray-600 dark:text-gray-300">Active Participants</p>
+                <p className="text-gray-600 dark:text-gray-300">Total Participants</p>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-purple-600 mb-2">
-                  {rooms.filter(room => room.isPublic).length}
+                  {rooms.reduce((acc, room) => acc + room.drawings.length, 0)}
                 </div>
-                <p className="text-gray-600 dark:text-gray-300">Public Rooms</p>
+                <p className="text-gray-600 dark:text-gray-300">Total Drawings</p>
               </div>
             </div>
           </div>

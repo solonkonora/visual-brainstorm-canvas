@@ -5,32 +5,37 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { 
   FaPalette, 
-  FaLock, 
-  FaUnlock, 
   FaCopy, 
   FaCheck,
   FaArrowLeft
 } from 'react-icons/fa';
 
+interface Drawing {
+  id: string;
+  type: 'line' | 'circle' | 'rectangle';
+  coordinates: Record<string, unknown>;
+  style?: Record<string, unknown>;
+  createdBy: string;
+  createdAt: Date;
+}
+
 interface CreatedRoom {
-  roomId: string;
+  _id: string;
   name: string;
-  description?: string;
-  isPublic: boolean;
-  maxParticipants: number;
-  currentParticipants: number;
-  shareableLink: string;
-  createdAt: string;
+  ownerId: string;
+  shareableLinkKey: string;
+  drawings: Drawing[];
+  participants: string[];
+  createdAt: Date;
+  lastModifiedAt: Date;
+  asOf?: number;
 }
 
 const CreateRoomPage = () => {
   const router = useRouter();
   const [formData, setFormData] = useState({
     name: '',
-    description: '',
-    isPublic: true,
-    password: '',
-    maxParticipants: 10,
+    ownerId: '', // Will be set from user context or token
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,37 +64,36 @@ const CreateRoomPage = () => {
         return;
       }
 
-      // For testing with mock user, simulate room creation
-      if (token === 'mock-jwt-token-for-testing') {
-        console.log('Mock room creation for:', formData);
-        
-        // Simulate successful room creation
-        const mockRoomId = `room-${Date.now()}`;
-        console.log(`Room "${formData.name}" created successfully! Room ID: ${mockRoomId}`);
-        
-        // Reset form
-        setFormData({
-          name: '',
-          description: '',
-          isPublic: false,
-          password: '',
-          maxParticipants: 10
-        });
-        setLoading(false);
-        return;
-      }
 
-      console.log('Creating room with data:', formData);
-      console.log('Canvas Service URL:', 'http://localhost:3005');
+
+      // Get user ID from token
+      let userId = 'anonymous-user';
+      try {
+        if (token) {
+          // Decode JWT token to get user ID
+          const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+          userId = tokenPayload.sub || tokenPayload.userId || tokenPayload.id || 'anonymous-user';
+        }
+      } catch (error) {
+        console.warn('Failed to decode token, using anonymous user:', error);
+      }
+      
+      const roomPayload = {
+        name: formData.name,
+        ownerId: userId,
+      };
+
+      console.log('Creating room with data:', roomPayload);
+      console.log('Room Service URL:', 'http://localhost:3008');
       console.log('Token exists:', !!token);
 
-      const response = await fetch(`http://localhost:3005/api/rooms`, {
+      const response = await fetch(`http://localhost:3008/rooms`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(roomPayload),
       });
 
       console.log('Response status:', response.status);
@@ -112,7 +116,7 @@ const CreateRoomPage = () => {
 
       const data = await response.json();
       console.log('Success data:', data);
-      setCreatedRoom(data.room);
+      setCreatedRoom(data); // Backend returns the room object directly
     } catch (err) {
       console.error('Full error:', err);
       if (err instanceof Error) {
@@ -161,7 +165,7 @@ const CreateRoomPage = () => {
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600 dark:text-gray-400">Room ID:</span>
                     <span className="font-mono text-lg font-bold text-blue-600 dark:text-blue-400">
-                      {createdRoom.roomId}
+                      {createdRoom._id}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
@@ -171,26 +175,16 @@ const CreateRoomPage = () => {
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-600 dark:text-gray-400">Max Participants:</span>
+                    <span className="text-gray-600 dark:text-gray-400">Owner ID:</span>
                     <span className="font-medium text-gray-800 dark:text-white">
-                      {createdRoom.maxParticipants}
+                      {createdRoom.ownerId}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-600 dark:text-gray-400">Access:</span>
-                    <div className="flex items-center space-x-2">
-                      {createdRoom.isPublic ? (
-                        <>
-                          <FaUnlock className="text-green-500" />
-                          <span className="text-green-600 dark:text-green-400">Public</span>
-                        </>
-                      ) : (
-                        <>
-                          <FaLock className="text-red-500" />
-                          <span className="text-red-600 dark:text-red-400">Private</span>
-                        </>
-                      )}
-                    </div>
+                    <span className="text-gray-600 dark:text-gray-400">Participants:</span>
+                    <span className="font-medium text-gray-800 dark:text-white">
+                      {createdRoom.participants.length}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -202,12 +196,12 @@ const CreateRoomPage = () => {
                 <div className="flex items-center space-x-2">
                   <input
                     type="text"
-                    value={createdRoom.shareableLink}
+                    value={`${window.location.origin}/room/${createdRoom._id}?key=${createdRoom.shareableLinkKey}`}
                     readOnly
                     className="flex-1 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-white font-mono text-sm"
                   />
                   <button
-                    onClick={() => copyToClipboard(createdRoom.shareableLink)}
+                    onClick={() => copyToClipboard(`${window.location.origin}/room/${createdRoom._id}?key=${createdRoom.shareableLinkKey}`)}
                     className={`px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
                       linkCopied
                         ? 'bg-green-600 text-white'
@@ -224,7 +218,7 @@ const CreateRoomPage = () => {
 
               <div className="flex flex-col sm:flex-row gap-4">
                 <button
-                  onClick={() => router.push(`/room/${createdRoom.roomId}`)}
+                  onClick={() => router.push(`/room/${createdRoom._id}`)}
                   className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 font-medium"
                 >
                   Enter Room
@@ -287,83 +281,10 @@ const CreateRoomPage = () => {
             </div>
 
             <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Description
-              </label>
-              <textarea
-                id="description"
-                name="description"
-                rows={3}
-                value={formData.description}
-                onChange={handleInputChange}
-                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                placeholder="What will you be working on together?"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="maxParticipants" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Max Participants
-              </label>
-              <select
-                id="maxParticipants"
-                name="maxParticipants"
-                value={formData.maxParticipants}
-                onChange={handleInputChange}
-                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-              >
-                <option value={5}>5 people</option>
-                <option value={10}>10 people</option>
-                <option value={25}>25 people</option>
-                <option value={50}>50 people</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="flex items-center space-x-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="isPublic"
-                  checked={formData.isPublic}
-                  onChange={handleInputChange}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <div className="flex items-center space-x-2">
-                  {formData.isPublic ? (
-                    <FaUnlock className="text-green-500" />
-                  ) : (
-                    <FaLock className="text-red-500" />
-                  )}
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {formData.isPublic ? 'Public Room' : 'Private Room'}
-                  </span>
-                </div>
-              </label>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-7">
-                {formData.isPublic 
-                  ? 'Anyone with the link can join' 
-                  : 'Requires a password to join'
-                }
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Additional room settings and features will be available after creation.
               </p>
             </div>
-
-            {!formData.isPublic && (
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Room Password *
-                </label>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  required={!formData.isPublic}
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                  placeholder="Enter room password"
-                />
-              </div>
-            )}
 
             <button
               type="submit"
