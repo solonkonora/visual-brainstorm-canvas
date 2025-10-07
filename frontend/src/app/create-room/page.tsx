@@ -84,10 +84,10 @@ const CreateRoomPage = () => {
       };
 
       console.log('Creating room with data:', roomPayload);
-      console.log('Room Service URL:', 'http://localhost:3008');
+      console.log('Room Service URL:', 'http://localhost:3006');
       console.log('Token exists:', !!token);
 
-      const response = await fetch(`http://localhost:3008/rooms`, {
+      const response = await fetch(`http://localhost:3006/rooms`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
