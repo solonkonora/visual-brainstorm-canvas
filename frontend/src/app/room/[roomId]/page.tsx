@@ -47,13 +47,8 @@ const RoomPage = ({ params }: RoomPageProps) => {
   const [showJoinForm, setShowJoinForm] = useState(false);
   const [joinForm, setJoinForm] = useState({ name: '', password: '' });
 
-  // Safely get current user (fallback if not wrapped with UserProvider)
-  let user: { id: string; name: string; email: string } | null = null;
-  try {
-    user = useUser().user;
-  } catch {
-    user = null;
-  }
+  const userContext = useUser();
+  const user = userContext ? userContext.user : null;
 
   // Unwrap params (Next.js 15+ async behavior)
   useEffect(() => {
@@ -74,7 +69,7 @@ const RoomPage = ({ params }: RoomPageProps) => {
         const headers: Record<string, string> = {};
         if (token) headers['Authorization'] = `Bearer ${token}`;
 
-        const response = await fetch(`http://localhost:3008/rooms/${roomId}`, { headers });
+        const response = await fetch(`http://localhost:3006/rooms/${roomId}`, { headers });
 
         if (!response.ok) {
           setError(response.status === 404 ? 'Room not found' : 'Failed to load room details');
@@ -104,13 +99,25 @@ const RoomPage = ({ params }: RoomPageProps) => {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
+      // Extract user ID from JWT token
+      let userId = 'guest-user';
+      try {
+        if (token) {
+          // Decode JWT token to get user ID
+          const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+          userId = tokenPayload.sub || tokenPayload.userId || tokenPayload.id || 'guest-user';
+        }
+      } catch (error) {
+        console.warn('Failed to decode token, using guest user:', error);
+      }
+
       const response = await fetch(
         `http://localhost:3006/rooms/${roomId}/add-participant`,
         {
           method: 'POST',
           headers,
           body: JSON.stringify({
-            userId: user?.id || 'guest-user',
+            userId: userId,
           }),
         }
       );
