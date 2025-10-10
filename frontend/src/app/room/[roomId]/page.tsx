@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useUser } from '@/app/context/user-context';
+import { ROOM_SERVICE_URL } from '@/lib/env';
 import {
   FaPalette,
   FaUsers,
@@ -39,6 +40,7 @@ interface RoomPageProps {
 
 const RoomPage = ({ params }: RoomPageProps) => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [roomId, setRoomId] = useState<string | null>(null);
   const [room, setRoom] = useState<Room | null>(null);
   const [loading, setLoading] = useState(true);
@@ -46,6 +48,9 @@ const RoomPage = ({ params }: RoomPageProps) => {
   const [error, setError] = useState<string | null>(null);
   const [showJoinForm, setShowJoinForm] = useState(false);
   const [joinForm, setJoinForm] = useState({ name: '', password: '' });
+  const [shareableKey, setShareableKey] = useState<string | null>(null);
+  const [keyValidation, setKeyValidation] = useState<{ valid: boolean; checked: boolean }>({ valid: false, checked: false });
+  const [validatingKey, setValidatingKey] = useState(false);
 
   const userContext = useUser();
   const user = userContext ? userContext.user : null;
@@ -58,6 +63,49 @@ const RoomPage = ({ params }: RoomPageProps) => {
     };
     unwrapParams();
   }, [params]);
+
+  // Extract shareable key from URL
+  useEffect(() => {
+    const key = searchParams.get('key');
+    if (key) {
+      setShareableKey(key);
+    }
+  }, [searchParams]);
+
+  // Validate shareable key when both roomId and key are available
+  useEffect(() => {
+    if (!roomId || !shareableKey || keyValidation.checked) return;
+
+    const validateShareableKey = async () => {
+      setValidatingKey(true);
+      try {
+        const response = await fetch(`${ROOM_SERVICE_URL}/rooms/${roomId}/validate-key/${shareableKey}`);
+        
+        if (response.ok) {
+          const result = await response.json();
+          setKeyValidation({ valid: result.valid, checked: true });
+          
+          if (result.valid) {
+            // If key is valid, show join form immediately
+            setShowJoinForm(true);
+          } else {
+            setError('Invalid or expired shareable link');
+          }
+        } else {
+          setKeyValidation({ valid: false, checked: true });
+          setError('Unable to validate shareable link');
+        }
+      } catch (err) {
+        console.error('Error validating shareable key:', err);
+        setKeyValidation({ valid: false, checked: true });
+        setError('Failed to validate shareable link');
+      } finally {
+        setValidatingKey(false);
+      }
+    };
+
+    validateShareableKey();
+  }, [roomId, shareableKey, keyValidation.checked]);
 
   // Fetch room details
   useEffect(() => {
@@ -143,12 +191,14 @@ const RoomPage = ({ params }: RoomPageProps) => {
   };
 
   // UI states
-  if (!roomId || loading) {
+  if (!roomId || loading || validatingKey) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
         <div className="text-center">
           <FaSpinner className="animate-spin text-4xl text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600 dark:text-gray-300">Loading room details...</p>
+          <p className="text-gray-600 dark:text-gray-300">
+            {validatingKey ? 'Validating shareable link...' : 'Loading room details...'}
+          </p>
         </div>
       </div>
     );
@@ -240,9 +290,15 @@ const RoomPage = ({ params }: RoomPageProps) => {
               <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">
                 Ready to Join?
               </h2>
-              <p className="text-gray-600 dark:text-gray-300 mb-6">
-                Click below to enter this collaborative room and start working together.
-              </p>
+              {shareableKey && keyValidation.valid ? (
+                <p className="text-green-600 dark:text-green-400 mb-6">
+                  ✓ Valid shareable link! You can join this room directly.
+                </p>
+              ) : (
+                <p className="text-gray-600 dark:text-gray-300 mb-6">
+                  Click below to enter this collaborative room and start working together.
+                </p>
+              )}
               <button
                 onClick={() => setShowJoinForm(true)}
                 className="px-8 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 font-medium flex items-center space-x-2 mx-auto"
@@ -254,7 +310,7 @@ const RoomPage = ({ params }: RoomPageProps) => {
           ) : (
             <div className="p-8">
               <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6">
-                Join Room
+                {shareableKey && keyValidation.valid ? 'Join via Shareable Link' : 'Join Room'}
               </h2>
 
               {error && (
