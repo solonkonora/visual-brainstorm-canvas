@@ -116,7 +116,7 @@ const CreateRoomPage = () => {
 
       const data = await response.json();
       console.log('Success data:', data);
-      setCreatedRoom(data); // Backend returns the room object directly
+      setCreatedRoom(data); // backend returns the room object directly
     } catch (err) {
       console.error('Full error:', err);
       if (err instanceof Error) {

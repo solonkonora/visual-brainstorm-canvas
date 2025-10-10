@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 // import { BACKEND_URL } from '@/lib/env';
-import { USER_SERVICE_URL } from '@/lib/env';
+import { AUTH_SERVICE_URL } from '@/lib/env';
 
 interface User {
   id: string;
@@ -34,9 +34,9 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
-  // Call gateway for current user info (gateway will proxy to user service) coming back to this
+  // Call auth service for current user info
   // const response = await fetch(`${BACKEND_URL}/users/me`, {
-    const response = await fetch(`${USER_SERVICE_URL}/users/me`, {
+    const response = await fetch(`${AUTH_SERVICE_URL}/auth/me`, {
 
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -70,7 +70,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       const token = localStorage.getItem('token');
       if (token) {
   // Call the backend logout endpoint
-  await fetch(`${USER_SERVICE_URL}/auth/logout`, {
+  await fetch(`${AUTH_SERVICE_URL}/auth/logout`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,

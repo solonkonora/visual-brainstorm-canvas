@@ -53,7 +53,7 @@ const RoomsPage = () => {
           return;
         }
 
-        const response = await fetch(`http://localhost:3008/rooms`, {
+        const response = await fetch(`http://localhost:3006/rooms`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -68,7 +68,7 @@ const RoomsPage = () => {
         }
 
         const data = await response.json();
-        setRooms(data); // Backend returns array of rooms directly
+        setRooms(data); // backend returns array of rooms directly
       } catch {
         setError('Failed to load rooms');
       } finally {
