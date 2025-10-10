@@ -1,57 +1,96 @@
-'use client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { FaPalette, FaUser, FaEnvelope, FaLock } from 'react-icons/fa';
-import { BACKEND_URL } from '@/lib/env';
+import React, { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { FaPalette, FaUser, FaEnvelope, FaLock } from "react-icons/fa";
+import { useForm } from "react-hook-form";
+// import { BACKEND_URL } from "@/lib/env";
+import { AUTH_SERVICE_URL } from "@/lib/env";
+import { useUser } from "../context/user-context";
+
+type FormValues = {
+  firstName?: string;
+  lastName?: string;
+  email: string;
+  password: string;
+};
 
 const AuthPage = () => {
   const router = useRouter();
   const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const { fetchCurrentUser, setUser } = useUser();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<FormValues>();
+
+  const onSubmit = async (values: FormValues) => {
+    console.log("onSubmit triggered with values:", values);
     setError(null);
 
     try {
       const url = isLogin
-        ? `${BACKEND_URL}/auth/login`
-        : `${BACKEND_URL}/auth/signup`;
+        // ? `${BACKEND_URL}/auth/login`
+        // : `${BACKEND_URL}/auth/signup`;
+        ? `${AUTH_SERVICE_URL}/auth/login`
+        : `${AUTH_SERVICE_URL}/auth/signup`;
+
+      console.log("DEBUG: Submitting form with:", values);
+
+      console.log("Fetching URL:", url);
+      console.log("Payload:", {
+        email: values.email,
+        password: values.password,
+        ...(isLogin
+          ? {}
+          : { firstName: values.firstName, lastName: values.lastName }),
+      });
 
       const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email,
-          password,
-          ...(isLogin ? {} : { firstName, lastName }),
+          email: values.email,
+          password: values.password,
+          ...(isLogin
+            ? {}
+            : { firstName: values.firstName, lastName: values.lastName }),
         }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Authentication failed');
+        let errorData: any = {};
+        try {
+          errorData = await response.json();
+        } catch {
+          console.warn("Response not JSON");
+        }
+        throw new Error(errorData.message || "Authentication failed");
       }
 
       const data = await response.json();
-      
-      // Store the token in localStorage
-      if (data.token) {
-        localStorage.setItem('token', data.token);
+
+      const accessToken = data.access_token || data.token || data.accessToken;
+      if (accessToken) {
+        localStorage.setItem("token", accessToken);
       }
 
-      router.push('/general-dashboard');
+      if (data.user) {
+        setUser(data.user);
+      }
+
+      await fetchCurrentUser();
+      router.push("/general-dashboard");
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError('An unknown error occurred');
+        setError("An unknown error occurred");
       }
     }
   };
@@ -66,13 +105,8 @@ const AuthPage = () => {
             </div>
           </Link>
           <h2 className="mt-6 text-center text-3xl font-bold text-gray-800 dark:text-white">
-            {isLogin ? 'Login to your account' : 'Create a new account'}
+            {isLogin ? "Login to your account" : "Create a new account"}
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-            {isLogin
-              ? 'Welcome back! Please enter your details'
-              : 'Get started with your account'}
-          </p>
           {error && (
             <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-center">
               {error}
@@ -81,130 +115,127 @@ const AuthPage = () => {
         </div>
 
         <div className="mt-8 bg-white dark:bg-gray-800 py-8 px-4 shadow-xl sm:rounded-2xl sm:px-10 border border-gray-200 dark:border-gray-700">
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            {/* First and Last Name for Signup */}
+          <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
             {!isLogin && (
               <>
+                {/* First Name */}
                 <div>
-                  <label
-                    htmlFor="firstName"
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                  >
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     First Name
                   </label>
-                  <div className="mt-1 relative rounded-md shadow-sm">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <FaUser className="text-gray-400" />
-                    </div>
+                  <div className="relative">
+                    <FaUser className="absolute left-3 top-3 text-gray-400" />
                     <input
-                      id="firstName"
-                      name="firstName"
-                      type="text"
-                      autoComplete="given-name"
-                      required={!isLogin}
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      className="block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                      {...register("firstName", {
+                        required: !isLogin ? "First name is required" : false,
+                      })}
+                      className="block w-full pl-10 pr-3 py-3 border rounded-xl shadow-sm dark:bg-gray-700 dark:text-white"
                     />
                   </div>
+                  {errors.firstName && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.firstName.message}
+                    </p>
+                  )}
                 </div>
+
+                {/* Last Name */}
                 <div>
-                  <label
-                    htmlFor="lastName"
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                  >
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Last Name
                   </label>
-                  <div className="mt-1 relative rounded-md shadow-sm">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <FaUser className="text-gray-400" />
-                    </div>
+                  <div className="relative">
+                    <FaUser className="absolute left-3 top-3 text-gray-400" />
                     <input
-                      id="lastName"
-                      name="lastName"
-                      type="text"
-                      autoComplete="family-name"
-                      required={!isLogin}
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      className="block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                      {...register("lastName", {
+                        required: !isLogin ? "Last name is required" : false,
+                      })}
+                      className="block w-full pl-10 pr-3 py-3 border rounded-xl shadow-sm dark:bg-gray-700 dark:text-white"
                     />
                   </div>
+                  {errors.lastName && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.lastName.message}
+                    </p>
+                  )}
                 </div>
               </>
             )}
 
             {/* Email */}
             <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-              >
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Email address
               </label>
-              <div className="mt-1 relative rounded-md shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FaEnvelope className="text-gray-400" />
-                </div>
+              <div className="relative">
+                <FaEnvelope className="absolute left-3 top-3 text-gray-400" />
                 <input
-                  id="email"
-                  name="email"
                   type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                  {...register("email", {
+                    required: "Email is required",
+                    pattern: {
+                      value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                      message: "Enter a valid email",
+                    },
+                  })}
+                  className="block w-full pl-10 pr-3 py-3 border rounded-xl shadow-sm dark:bg-gray-700 dark:text-white"
                 />
               </div>
+              {errors.email && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.email.message}
+                </p>
+              )}
             </div>
 
             {/* Password */}
             <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-              >
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Password
               </label>
-              <div className="mt-1 relative rounded-md shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FaLock className="text-gray-400" />
-                </div>
+              <div className="relative">
+                <FaLock className="absolute left-3 top-3 text-gray-400" />
                 <input
-                  id="password"
-                  name="password"
                   type="password"
-                  autoComplete={isLogin ? 'current-password' : 'new-password'}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                  {...register("password", {
+                    required: "Password is required",
+                    minLength: {
+                      value: 6,
+                      message: "Password must be at least 6 characters",
+                    },
+                  })}
+                  className="block w-full pl-10 pr-3 py-3 border rounded-xl shadow-sm dark:bg-gray-700 dark:text-white"
                 />
               </div>
+              {errors.password && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.password.message}
+                </p>
+              )}
             </div>
 
             {/* Submit */}
             <div>
               <button
                 type="submit"
-                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+                disabled={isSubmitting}
+                className="w-full py-3 px-4 rounded-xl shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700"
               >
-                {isLogin ? 'Login' : 'Sign up'}
+                {isSubmitting ? "Processing..." : isLogin ? "Login" : "Sign Up"}
               </button>
             </div>
           </form>
 
-          {/* Switch between login/signup */}
+          {/* Toggle */}
           <div className="mt-6 text-center">
             <button
               type="button"
               onClick={() => setIsLogin(!isLogin)}
-              className="text-sm font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 rounded-lg"
+              className="text-sm font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400"
             >
               {isLogin
                 ? "Don't have an account? Sign up"
-                : 'Already have an account? Sign in'}
+                : "Already have an account? Sign in"}
             </button>
           </div>
         </div>

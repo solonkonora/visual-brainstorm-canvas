@@ -1,13 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from 'next/navigation';
 import { Home, Compass, Star, Gift, UserPlus, Menu, LogOut } from "lucide-react";
 import Link from 'next/link';
 import { useUser } from '../context/user-context';
 
 export default function Dashboard() {
+  const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, loading, logout } = useUser();
+
+  // Redirect to auth if not authenticated
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/auth');
+    }
+  }, [user, loading, router]);
   
   const templates = [
     { name: "Blank board", color: "from-blue-500 to-blue-700" },
@@ -130,31 +139,19 @@ export default function Dashboard() {
 
       {/* Main content */}
       <main className="flex-1 flex flex-col min-w-0">
-        {/* Header */}
         <header className="h-16 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex items-center justify-between px-6 shadow-sm">
           <div className="text-2xl font-bold text-gray-700 dark:text-gray-200 flex items-center gap-2 p-8">
             Dashboard
-            {/* <span className="text-xs bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-lg">Free</span> */}
           </div>
           <div className="flex items-center gap-3">
-            {/* <button 
-              className="flex items-center gap-1 text-sm font-medium px-3 py-1 border rounded-lg hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-800 dark:text-gray-200"
-              onClick={handleInviteMembers}
-            >
-              <UserPlus size={16} /> Invite members
-            </button> */}
-            {/* <button className="bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm px-3 py-1 rounded-lg hover:from-blue-700 hover:to-blue-800 shadow">
-              Upgrade
-            </button> */}
-            {/* <Gift size={20} className="text-gray-600 dark:text-gray-300" />
-            <Bell size={20} className="text-gray-600 dark:text-gray-300" /> */}
+            
             {loading ? (
               <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-700 animate-pulse"></div>
             ) : user ? (
               <div className="flex items-center gap-2">
                 <div className="text-right hidden sm:block">
                   <div className="text-sm font-medium text-gray-800 dark:text-gray-200">{user.name}</div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400">{user.email}</div>
+                  {/* <div className="text-xs text-gray-600 dark:text-gray-400">{user.email}</div> */}
                 </div>
                 <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-700 flex items-center justify-center text-white text-sm font-medium">
                   {user.name.charAt(0).toUpperCase()}
@@ -176,14 +173,10 @@ export default function Dashboard() {
               {t.name}
             </div>
           ))}
-          <Link href="/dashboard" className="min-w-[8rem] border px-3 py-2 rounded-lg hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-700 dark:text-gray-200 shadow-sm mb-2 flex items-center justify-center">
-            + Create new
-          </Link>
         </div>
 
         {/* Boards */}
         <div className="px-2 sm:px-6 py-6">
-          {/* Quick Access Section */}
           <div className="mb-8">
             <h2 className="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-200">Quick Access</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -214,44 +207,6 @@ export default function Dashboard() {
                 <p className="text-purple-100 text-sm">Access the drawing canvas</p>
               </Link>
             </div>
-          </div>
-
-          <h2 className="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-200">Boards in this team</h2>
-
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 mb-6 text-sm">
-            <select className="border rounded-lg px-2 py-1 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 w-full sm:w-auto">
-              <option>All boards</option>
-            </select>
-            <select className="border rounded-lg px-2 py-1 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 w-full sm:w-auto">
-              <option>Owned by anyone</option>
-            </select>
-            <select className="border rounded-lg px-2 py-1 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 w-full sm:w-auto">
-              <option>Last opened</option>
-            </select>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="min-w-full border-t border-gray-200 dark:border-gray-700 text-sm">
-              <thead className="text-left text-gray-600 dark:text-gray-400">
-                <tr>
-                  <th className="py-2">Name</th>
-                  <th className="py-2">Last opened</th>
-                  <th className="py-2">Owner</th>
-                </tr>
-              </thead>
-              <tbody>
-                {boards.map((b, i) => (
-                  <tr
-                    key={i}
-                    className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
-                  >
-                    <td className="py-3 font-medium text-gray-800 dark:text-gray-200">{b.name}</td>
-                    <td className="py-3 text-gray-600 dark:text-gray-400">{b.modified}</td>
-                    <td className="py-3 text-gray-600 dark:text-gray-400">{b.owner}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
         </div>
       </main>
